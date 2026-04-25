@@ -6,6 +6,7 @@ import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import Swal from 'sweetalert2'
 
+
 export default function MentorDashboard() {
   const [user, setUser] = useState<any>(null)
   const [mentees, setMentees] = useState<any[]>([])
@@ -165,13 +166,21 @@ export default function MentorDashboard() {
         <div className="px-4 pb-4">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">Menu Kelola</p>
           <nav className="space-y-1.5">
-            <button onClick={() => setActiveTab('overview')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-[#1e1b4b] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+            {/* Tombol Overview (Warnanya Gelap/Aktif karena kita lagi di halaman utama) */}
+            <button 
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all bg-[#1e1b4b] text-white shadow-md"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               <span className="font-medium">Overview Tim</span>
             </button>
-            <button onClick={() => setActiveTab('tambah_tim')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'tambah_tim' ? 'bg-[#1e1b4b] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+
+            {/* Tombol Data Anak OJT (Warnanya Abu-abu/Tidak Aktif, kalau diklik pindah halaman) */}
+            <button 
+              onClick={() => router.push('/mentor/data-ojt')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-              <span className="font-medium">Tambah Anak OJT</span>
+              <span className="font-medium">Data Anak OJT</span>
             </button>
           </nav>
         </div>

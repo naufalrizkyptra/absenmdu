@@ -5,6 +5,7 @@ import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Inter } from 'next/font/google'
 import Image from 'next/image'
+import Swal from 'sweetalert2'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -81,7 +82,13 @@ export default function Login() {
 
   const showMaintenanceAlert = (e: React.MouseEvent) => {
     e.preventDefault()
-    alert("Fitur login sosmed masih dalam tahap Maintenance 🚧\nSilakan gunakan NIP/Email.")
+    Swal.fire({
+      title: 'Under Maintenance 🚧',
+      text: 'Fitur login ini belum tersedia.',
+      icon: 'info',
+      confirmButtonColor: '#1e1b4b',
+      confirmButtonText: 'Oke'
+    })
   }
 
   return (
@@ -103,8 +110,8 @@ export default function Login() {
           </h1>
           <p className="text-[13px] text-slate-500 leading-relaxed px-2">
             {isForgotPassword 
-              ? 'Mentor/Admin: Masukkan Email. OJT: Hubungi Mentor.' 
-              : 'OJT gunakan NIP. Mentor/Admin gunakan Email.'}
+              ? 'Mentor: Masukkan Email | OJT: Hubungi Mentor' 
+              : 'OJT gunakan NIP | Mentor gunakan Email'}
           </p>
         </div>
 

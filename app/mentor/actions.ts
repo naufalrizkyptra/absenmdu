@@ -70,3 +70,43 @@ export async function resetPasswordByMentor(userId: string, newPassword: string)
     return { success: false, message: error.message }
   }
 }
+
+// 3. FUNGSI UPDATE DATA PROFIL OJT
+export async function updateOJTProfile(userId: string, updateData: any) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('users')
+      .update({
+        name: updateData.name,
+        nip: updateData.nip,
+        asal_sekolah: updateData.asal_sekolah,
+        no_telp: updateData.no_telp,
+        divisi: updateData.divisi,
+        asal_kantor: updateData.asal_kantor,
+        start_period: updateData.start_period || null,
+        end_period: updateData.end_period || null,
+      })
+      .eq('id', userId)
+
+    if (error) throw error
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, message: error.message }
+  }
+}
+
+// 4. FUNGSI HAPUS AKUN OJT PERMANEN
+export async function deleteOJTAccount(userId: string) {
+  try {
+    // Hapus dari tabel users
+    await supabaseAdmin.from('users').delete().eq('id', userId)
+    
+    // Hapus total dari sistem Auth Supabase
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+    if (error) throw error
+    
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, message: error.message }
+  }
+}

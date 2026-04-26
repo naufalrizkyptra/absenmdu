@@ -72,13 +72,19 @@ export async function resetPasswordByMentor(userId: string, newPassword: string)
 }
 
 // 3. FUNGSI UPDATE DATA PROFIL OJT
+// 3. FUNGSI UPDATE DATA PROFIL OJT
 export async function updateOJTProfile(userId: string, updateData: any) {
   try {
-    const { error } = await supabaseAdmin
+    // Pindahin deklarasi email ke atas biar bisa dipakai di kedua brankas
+    const newEmail = `${updateData.nip}@ojt.mdu.com` 
+
+    // Langkah 1: Update data profil di tabel users (database biasa)
+    const { error: dbError } = await supabaseAdmin
       .from('users')
       .update({
         name: updateData.name,
         nip: updateData.nip,
+        email: newEmail, // <--- INI TAMBAHANNYA BIAR DI TABEL IKUT BERUBAH
         asal_sekolah: updateData.asal_sekolah,
         no_telp: updateData.no_telp,
         divisi: updateData.divisi,
@@ -88,7 +94,16 @@ export async function updateOJTProfile(userId: string, updateData: any) {
       })
       .eq('id', userId)
 
-    if (error) throw error
+    if (dbError) throw dbError
+
+    // Langkah 2: Update email login di sistem Auth Supabase
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
+      { email: newEmail }
+    )
+
+    if (authError) throw authError
+
     return { success: true }
   } catch (error: any) {
     return { success: false, message: error.message }

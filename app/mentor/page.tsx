@@ -6,18 +6,16 @@ import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import Swal from 'sweetalert2'
 
-
 export default function MentorDashboard() {
   const [user, setUser] = useState<any>(null)
   const [mentees, setMentees] = useState<any[]>([])
+  const [todayAttendance, setTodayAttendance] = useState<any[]>([])
   const [attendances, setAttendances] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Ubah email -> nip
   const [formData, setFormData] = useState({
     nip: '',
     name: '',
@@ -37,7 +35,6 @@ export default function MentorDashboard() {
     })
 
     if (result.success) {
-      // POPUP SUKSES
       Swal.fire({
         title: 'Berhasil!',
         text: 'Akun OJT berhasil didaftarkan.',
@@ -49,7 +46,6 @@ export default function MentorDashboard() {
         window.location.reload()
       })
     } else {
-      // POPUP ERROR
       Swal.fire({
         title: 'Gagal',
         text: result.message,
@@ -60,7 +56,6 @@ export default function MentorDashboard() {
     setIsSubmitting(false)
   }
 
-  // FUNGSI BARU: TOMBOL RESET PASSWORD OLEH MENTOR
   const handleResetPasswordOJT = async (ojtId: string, ojtName: string) => {
     const { value: newPassword } = await Swal.fire({
       title: `Reset Password ${ojtName}`,
@@ -107,6 +102,7 @@ export default function MentorDashboard() {
       if (!user) { router.push('/login'); return }
       setUser(user)
 
+      // 1. Ambil Profil Mentor
       const { data: mentorProfile } = await supabase
         .from('users')
         .select('name, avatar_url') 
@@ -115,6 +111,7 @@ export default function MentorDashboard() {
       
       if (mentorProfile) setProfile(mentorProfile)
 
+      // 2. Ambil Data Anak OJT
       const { data: teamData } = await supabase
         .from('users')
         .select('*')
@@ -122,23 +119,31 @@ export default function MentorDashboard() {
 
       if (teamData) {
         setMentees(teamData)
+        
         if (teamData.length > 0) {
           const menteeIds = teamData.map(m => m.id)
-          const startOfToday = new Date()
-          startOfToday.setHours(0, 0, 0, 0)
           
-          const { data: absenData } = await supabase
+          // Dapatkan tanggal hari ini (Format YYYY-MM-DD menyesuaikan waktu lokal)
+          const today = new Date().toLocaleDateString('en-CA')
+          
+          // 3. Tarik Absen HARI INI khusus anak buah mentor ini
+          const { data: attendanceData } = await supabase
             .from('attendance')
             .select('*, users(name, divisi)')
             .in('user_id', menteeIds)
-            .gte('check_in_time', startOfToday.toISOString())
+            .gte('check_in_time', `${today}T00:00:00`)
+            .lte('check_in_time', `${today}T23:59:59`)
             .order('check_in_time', { ascending: false })
             
-          if (absenData) setAttendances(absenData)
+          if (attendanceData) {
+            setAttendances(attendanceData) 
+            setTodayAttendance(attendanceData)
+          }
         }
       }
       setLoading(false)
     }
+
     fetchMentorData()
   }, [router])
 
@@ -173,12 +178,13 @@ export default function MentorDashboard() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               <span className="font-medium">Overview Tim</span>
             </button>
-            <button 
-              onClick={() => router.push('/mentor/data-ojt')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+            <button onClick={() => router.push('/mentor/data-ojt')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
               <span className="font-medium">Data Anak OJT</span>
+            </button>
+            <button onClick={() => router.push('/mentor/penilaian')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span className="font-medium">Penilaian & Sertifikat</span>
             </button>
           </nav>
         </div>
@@ -199,11 +205,8 @@ export default function MentorDashboard() {
           2. MAIN CONTENT AREA 
           ========================================= */}
       <main className="flex-1 flex flex-col h-[100dvh] md:h-screen overflow-hidden relative">
-        
-        {/* HEADER BERSAMA (Menyesuaikan Desktop/Mobile) */}
         <header className="px-5 py-5 md:px-8 md:py-6 flex items-center justify-between bg-white md:bg-transparent border-b border-slate-100 md:border-none shadow-sm md:shadow-none z-10">
           <div className="flex items-center gap-3 md:block">
-            {/* Avatar khusus mobile header */}
             <div className="md:hidden relative">
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="Profile" className="w-10 h-10 rounded-xl bg-slate-100 object-cover border border-slate-200" />
@@ -213,48 +216,47 @@ export default function MentorDashboard() {
             </div>
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-slate-800 tracking-tight">Halo, {profile?.name || 'Mentor'}!</h1>
-              <p className="text-xs md:text-sm text-slate-500 mt-0.5 md:mt-1">Pantau kinerja dan kehadiran tim lu hari ini.</p>
+              <p className="text-xs md:text-sm text-slate-500 mt-0.5 md:mt-1">Pantau kinerja dan kehadiran tim anda hari ini.</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Tombol Settings (Khusus Desktop) */}
             <button onClick={() => router.push('/settings')} className="hidden md:block p-3.5 rounded-2xl bg-white border border-slate-100 hover:bg-slate-50 transition-all shadow-sm group">
               <svg className="w-6 h-6 text-slate-600 group-hover:rotate-45 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
-            {/* Tombol Logout (Khusus Mobile) */}
             <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="md:hidden p-2.5 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
         </header>
 
-        {/* AREA KONTEN UTAMA YANG BISA DI-SCROLL */}
         <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-28 md:pb-8">
-          
           <div className="space-y-6">
-            {/* 3 Kotak Statistik */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-              <div className="bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100">
-                <p className="text-xs md:text-sm font-semibold text-slate-500 mb-1">Total Anak OJT</p>
-                <p className="text-3xl md:text-4xl font-black text-[#1e1b4b]">{mentees.length}</p>
+            
+            {/* STATS SUMMARY HARI INI */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Tim</p>
+                <p className="text-2xl font-black text-slate-800">{mentees.length} <span className="text-sm font-medium text-slate-400">Orang</span></p>
               </div>
-              <div className="bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100">
-                <p className="text-xs md:text-sm font-semibold text-slate-500 mb-1">Hadir Hari Ini</p>
-                <p className="text-3xl md:text-4xl font-black text-emerald-600">{attendances.length}</p>
+              <div className="bg-emerald-50 p-5 rounded-3xl border border-emerald-100">
+                <p className="text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">Hadir</p>
+                <p className="text-2xl font-black text-emerald-700">{todayAttendance.length}</p>
               </div>
-              <div className="bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100">
-                <p className="text-xs md:text-sm font-semibold text-slate-500 mb-1">Terlambat</p>
-                <p className="text-3xl md:text-4xl font-black text-rose-500">
-                  {attendances.filter(a => a.status === 'Terlambat').length}
-                </p>
+              <div className="bg-rose-50 p-5 rounded-3xl border border-rose-100">
+                <p className="text-rose-600 text-xs font-bold uppercase tracking-wider mb-1">Belum Absen</p>
+                <p className="text-2xl font-black text-rose-700">{mentees.length - todayAttendance.length}</p>
+              </div>
+              <div className="bg-amber-50 p-5 rounded-3xl border border-amber-100">
+                <p className="text-amber-600 text-xs font-bold uppercase tracking-wider mb-1">Terlambat</p>
+                <p className="text-2xl font-black text-amber-700">{todayAttendance.filter(a => a.status === 'Terlambat').length}</p>
               </div>
             </div>
 
-            {/* TABEL 1: DAFTAR ANGGOTA (Dengan scroll horizontal) */}
+            {/* TABEL UTAMA: PANTAU KEHADIRAN */}
             <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
               <div className="p-4 md:p-6 border-b border-slate-100 bg-white">
-                <h2 className="text-base md:text-lg font-bold text-slate-800">Daftar Anggota Tim OJT</h2>
+                <h2 className="text-base md:text-lg font-bold text-slate-800">Status Kehadiran Tim Hari Ini</h2>
               </div>
               <div className="p-0 overflow-x-auto custom-scrollbar">
                 {mentees.length === 0 ? (
@@ -263,75 +265,52 @@ export default function MentorDashboard() {
                   <table className="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
                     <thead>
                       <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                        <th className="p-4 font-semibold pl-4 md:pl-6">NIP</th>
-                        <th className="p-4 font-semibold">Nama Lengkap</th>
+                        <th className="p-4 font-semibold pl-4 md:pl-6">Nama & NIP</th>
+                        <th className="p-4 font-semibold">Status Absen</th>
                         <th className="p-4 font-semibold">Asal Sekolah</th>
-                        <th className="p-4 font-semibold">No. WhatsApp</th>
-                        <th className="p-4 font-semibold">Periode Magang</th>
-                        <th className="p-4 font-semibold text-right pr-4 md:pr-6">Aksi</th>
+                        <th className="p-4 font-semibold text-right pr-4 md:pr-6">Aksi Cepat</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {mentees.map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-4 pl-4 md:pl-6 font-bold text-slate-800">{m.nip || '-'}</td>
-                          <td className="p-4 text-sm font-bold text-slate-800">
-                            {m.name}
-                            <div className="text-xs font-normal text-slate-500 mt-0.5">{m.divisi}</div>
-                          </td>
-                          <td className="p-4 text-sm font-medium text-slate-700">{m.asal_sekolah || '-'}</td>
-                          <td className="p-4 text-sm font-medium text-blue-600">{m.no_telp || '-'}</td>
-                          <td className="p-4 text-sm font-medium text-slate-600">
-                            {m.start_period ? `${formatDate(m.start_period)} - ${formatDate(m.end_period)}` : '-'}
-                          </td>
-                          <td className="p-4 text-right pr-4 md:pr-6">
-                            <button 
-                              onClick={() => handleResetPasswordOJT(m.id, m.name)}
-                              disabled={isSubmitting}
-                              className="text-xs font-bold px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 transition-colors shadow-sm"
-                            >
-                              🔑 Reset Pass
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
+                      {mentees.map((m) => {
+                        const absenHariIni = todayAttendance.find(a => a.user_id === m.id)
 
-            {/* TABEL 2: ABSENSI HARI INI (Dengan scroll horizontal) */}
-            <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                <h2 className="text-base md:text-lg font-bold text-slate-800">Absensi Tim Hari Ini</h2>
-              </div>
-              <div className="p-0 overflow-x-auto custom-scrollbar">
-                {attendances.length === 0 ? (
-                  <div className="text-center py-10"><p className="text-sm text-slate-400">Belum ada anak OJT lu yang absen hari ini.</p></div>
-                ) : (
-                  <table className="w-full text-left border-collapse whitespace-nowrap min-w-[500px]">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                        <th className="p-4 font-semibold pl-4 md:pl-6">Nama Tim</th>
-                        <th className="p-4 font-semibold">Jam Masuk</th>
-                        <th className="p-4 font-semibold">Jam Pulang</th>
-                        <th className="p-4 font-semibold text-right pr-4 md:pr-6">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {attendances.map((absen) => (
-                        <tr key={absen.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-4 pl-4 md:pl-6 font-bold text-slate-800">{absen.users?.name || 'Tanpa Nama'}</td>
-                          <td className="p-4 text-sm font-bold text-slate-800">{formatTime(absen.check_in_time)}</td>
-                          <td className="p-4 text-sm font-bold text-emerald-600">{absen.check_out_time ? formatTime(absen.check_out_time) : '-'}</td>
-                          <td className="p-4 pr-4 md:pr-6 text-right">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${absen.status === 'Terlambat' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                              {absen.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                        return (
+                          <tr key={m.id} className={`transition-colors ${!absenHariIni ? 'bg-rose-50/40 hover:bg-rose-50/70' : 'hover:bg-slate-50'}`}>
+                            <td className="p-4 pl-4 md:pl-6">
+                              <div className="font-bold text-slate-800">{m.name}</div>
+                              <div className="text-xs font-medium text-slate-500 mt-0.5">{m.nip || '-'} • {m.divisi}</div>
+                            </td>
+                            
+                            <td className="p-4">
+                              {absenHariIni ? (
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${absenHariIni.status === 'Terlambat' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                  ● {absenHariIni.status} ({formatTime(absenHariIni.check_in_time)})
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-100 text-rose-600 shadow-sm border border-rose-200">
+                                  ● Belum Absen / Alpa
+                                </span>
+                              )}
+                            </td>
+                            
+                            <td className="p-4 text-sm font-medium text-slate-700">{m.asal_sekolah || '-'}</td>
+                            
+                            <td className="p-4 text-right pr-4 md:pr-6 flex justify-end gap-2 items-center">
+                              {!absenHariIni && (
+                                <a 
+                                  href={`https://wa.me/${m.no_telp?.replace(/^0/, '62')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-xs font-bold transition-all"
+                                >
+                                  Hubungi WA
+                                </a>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -347,25 +326,17 @@ export default function MentorDashboard() {
           ========================================= */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 pb-safe pt-2 px-6 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div className="max-w-md mx-auto flex justify-between items-center pb-4">
-          <button 
-            className="flex flex-col items-center p-2 flex-1 transition-colors text-[#1e1b4b]"
-          >
+          <button className="flex flex-col items-center p-2 flex-1 transition-colors text-[#1e1b4b]">
             <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             <span className="text-[10px] font-semibold">Overview</span>
           </button>
           
-          <button 
-            onClick={() => router.push('/mentor/data-ojt')} 
-            className="flex flex-col items-center p-2 flex-1 transition-colors text-slate-400 hover:text-slate-600"
-          >
+          <button onClick={() => router.push('/mentor/data-ojt')} className="flex flex-col items-center p-2 flex-1 transition-colors text-slate-400 hover:text-slate-600">
             <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
             <span className="text-[10px] font-semibold">Data Tim</span>
           </button>
           
-          <button 
-            onClick={() => router.push('/settings')} 
-            className="flex flex-col items-center p-2 flex-1 transition-colors text-slate-400 hover:text-slate-600"
-          >
+          <button onClick={() => router.push('/settings')} className="flex flex-col items-center p-2 flex-1 transition-colors text-slate-400 hover:text-slate-600">
             <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             <span className="text-[10px] font-semibold">Profil</span>
           </button>

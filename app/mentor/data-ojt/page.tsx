@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
-import { createOJTAccount, updateOJTProfile, deleteOJTAccount } from '../actions'
+import { createOJTAccount, updateOJTProfile, deleteOJTAccount, resetPasswordByMentor } from '../actions'
 import Swal from 'sweetalert2'
+import { Toaster, toast } from 'sonner'
 
 export default function DataOJTPage() {
   const [user, setUser] = useState<any>(null)
@@ -16,6 +17,10 @@ export default function DataOJTPage() {
   const [editingUser, setEditingUser] = useState<any>(null)
   
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [resetUser, setResetUser] = useState<{id: string, name: string} | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
   const [formData, setFormData] = useState({
     nip: '',
     name: '',
@@ -99,6 +104,7 @@ export default function DataOJTPage() {
       setIsSubmitting(false)
     }
   }
+
   // LOGIKA FILTER SEARCH
   const filteredMentees = mentees.filter((m) => {
     const query = searchQuery.toLowerCase()
@@ -109,6 +115,34 @@ export default function DataOJTPage() {
       m.asal_kantor?.toLowerCase().includes(query)
     )
   })
+
+  // Fungsi 1: Cuma buat ngebuka modal dan nyatet siapa yang mau direset
+  const openResetModal = (id: string, name: string) => {
+    setResetUser({ id, name })
+    setNewPassword('') // Kosongin input dari ketikan sebelumnya
+    setShowResetModal(true)
+  }
+
+  // Fungsi 2: Buat ngejalanin reset ke database (Dipanggil pas tombol "Simpan" diklik)
+  const executeResetPassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error('Password minimal harus 6 karakter ya!')
+      return
+    }
+
+    setIsResetting(true)
+    const toastId = toast.loading(`Mereset sandi ${resetUser?.name}...`)
+
+    const result = await resetPasswordByMentor(resetUser!.id, newPassword)
+
+    if (result.success) {
+      toast.success(`Sandi ${resetUser?.name} berhasil diubah!`, { id: toastId })
+      setShowResetModal(false) // Langsung tutup modalnya kalau sukses
+    } else {
+      toast.error(`Gagal mereset: ${result.message}`, { id: toastId })
+    }
+    setIsResetting(false)
+  }
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#f4f7fe]">Memuat Data Tim...</div>
 
@@ -133,18 +167,18 @@ export default function DataOJTPage() {
         <div className="px-4 pb-4">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">Menu Kelola</p>
           <nav className="space-y-1.5">
-            <button 
-              onClick={() => router.push('/mentor')} 
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-            >
+            <button onClick={() => router.push('/mentor')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               <span className="font-medium">Overview Tim</span>
             </button>
-            <button 
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all bg-[#1e1b4b] text-white shadow-md"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+            {/* DATA OJT - AKTIF DI SINI */}
+            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all bg-[#1e1b4b] text-white shadow-md">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
               <span className="font-medium">Data Anak OJT</span>
+            </button>
+            <button onClick={() => router.push('/mentor/penilaian')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span className="font-medium">Penilaian & Sertifikat</span>
             </button>
           </nav>
         </div>
@@ -165,6 +199,7 @@ export default function DataOJTPage() {
           2. MAIN CONTENT AREA 
           ========================================= */}
       <main className="flex-1 flex flex-col h-[100dvh] md:h-screen overflow-hidden relative">
+        <Toaster position="top-center" richColors />
         
         {/* HEADER BERSAMA */}
         <header className="px-5 py-5 md:px-8 md:py-6 flex items-center justify-between bg-white md:bg-transparent border-b border-slate-100 md:border-none shadow-sm md:shadow-none z-10">
@@ -178,7 +213,7 @@ export default function DataOJTPage() {
             </div>
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-slate-800 tracking-tight">Manajemen Anggota</h1>
-              <p className="text-xs md:text-sm text-slate-500 mt-0.5 md:mt-1">Kelola data profil tim OJT lu.</p>
+              <p className="text-xs md:text-sm text-slate-500 mt-0.5 md:mt-1">Kelola data profil tim OJT anda.</p>
             </div>
           </div>
 
@@ -271,6 +306,14 @@ export default function DataOJTPage() {
                             >
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               Hapus
+                            </button>
+                            {/* Tombol Reset Pass di sebelah Edit / Hapus */}
+                            <button 
+                              onClick={() => openResetModal(m.id, m.name)} 
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-lg text-xs font-bold shadow-sm transition-colors"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                              Sandi
                             </button>
                           </div>
                         </td>
@@ -460,6 +503,61 @@ export default function DataOJTPage() {
           </div>
         </div>
       )}
+
+      {/* =========================================
+          MODAL RESET PASSWORD (APPLE STYLE UI)
+          ========================================= */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm transition-all duration-300">
+          <div className="bg-white/95 backdrop-blur-xl w-full max-w-sm rounded-[28px] p-6 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border border-white/60 transform scale-100 animate-in fade-in zoom-in-95 duration-200">
+            
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 tracking-tight">Atur Ulang Sandi</h3>
+              <p className="text-sm text-slate-500 mt-1">Buat sandi baru untuk <strong>{resetUser?.name}</strong></p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <input 
+                  type="password" 
+                  placeholder="Minimal 6 karakter"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400"
+                />
+              </div>
+              
+              <div className="flex gap-3 mt-8">
+                <button 
+                  onClick={() => setShowResetModal(false)}
+                  disabled={isResetting}
+                  className="flex-1 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-colors text-sm"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={executeResetPassword}
+                  disabled={isResetting || newPassword.length < 6}
+                  className={`flex-1 px-4 py-3.5 font-bold rounded-2xl transition-all shadow-md text-sm ${
+                    isResetting || newPassword.length < 6 
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                      : 'bg-[#1e1b4b] hover:bg-blue-800 text-white'
+                  }`}
+                >
+                  {isResetting ? 'Memproses...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

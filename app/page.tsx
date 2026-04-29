@@ -10,7 +10,7 @@ import { Toaster, toast } from 'sonner'
 const LOKASI_CABANG: Record<string, { lat: number, lng: number }> = {
   'Jatiwaringin': { lat: -6.247942342659016, lng: 106.90724753666649 }, 
   'Margonda': { lat: -6.357711365116603, lng: 106.83183796973027 },
-  'BSI Slipi': { lat: -6.189678734306436, lng: 106.79595760545618 }, 
+  'BSI Slipi': { lat: -6.1898682555279985, lng: 106.79550692558983 },
   'BSI BSD': { lat: -6.3038940586147785, lng: 106.6876169784744 }, 
   'BSI Ciledug': { lat: -6.237729787450286, lng: 106.76291247847368 }, 
   'Rawamangun': { lat: -6.192347469094796, lng: 106.88095207476705 }, 

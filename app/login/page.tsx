@@ -51,7 +51,7 @@ export default function Login() {
 
     if (profile?.role === 'mentor') router.push('/mentor')
     else if (profile?.role === 'admin') router.push('/admin') 
-    else router.push('/') 
+    else router.push('/ojt') 
   }
 
   const handleResetPassword = async (e: React.FormEvent) => {

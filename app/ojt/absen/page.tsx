@@ -190,9 +190,6 @@ export default function AbsenPage() {
     return new Date(isoString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  const mapCenterLat = userLoc ? userLoc.lat : targetLat
-  const mapCenterLng = userLoc ? userLoc.lng : targetLng
-
   if (isCheckingRole) {
     return (
       <div className="min-h-screen bg-[#f8faff] flex items-center justify-center">
@@ -205,36 +202,36 @@ export default function AbsenPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-[#f8faff] flex flex-col md:flex-row font-sans">
-      
+    <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
       
-      {/* SIDEBAR (DESKTOP) */}
-      <aside className="w-64 bg-white border-r border-slate-100 hidden md:flex flex-col shadow-sm z-10 shrink-0">
+      {/* SIDEBAR DESKTOP (Struktur Fixed Sama Seperti Beranda) */}
+      <nav className="w-64 bg-white border-r border-slate-100 hidden md:flex flex-col h-screen fixed z-20 shadow-sm">
         <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#1e1b4b] rounded-xl flex items-center justify-center text-white font-bold text-xl">M</div>
-          <span className="text-xl font-bold text-slate-800 tracking-tight">Portal Absensi</span>
+          <div className="w-12 h-12 flex items-center justify-center">
+            <img src="/logo-mdu.PNG" alt="MDU Logo" className="w-12 h-12 object-contain" />
+          </div>
+          <span className="text-xl font-bold text-slate-800 tracking-tight">MDU Portal</span>
+        </div>
+        
+        <div className="px-4 flex-1 mt-2 space-y-2">
+          {/* TOMBOL KEMBALI KE BERANDA */}
+          <button 
+            onClick={() => router.push('/ojt')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            <span className="font-medium">Beranda</span>
+          </button>
+
+          {/* TOMBOL PRESENSI (AKTIF) */}
+          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all bg-blue-600 text-white shadow-md shadow-blue-600/20">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
+            <span className="font-medium">Presensi Lokasi</span>
+          </button>
         </div>
 
-        <div className="px-4 pb-4">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">Menu Utama</p>
-          <nav className="space-y-1.5">
-            {/* TOMBOL KEMBALI KE BERANDA */}
-            <button 
-              onClick={() => router.push('/ojt')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-              <span className="font-medium">Beranda</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all bg-blue-600 text-white shadow-md shadow-blue-600/20">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              <span className="font-medium">Presensi Lokasi</span>
-            </button>
-          </nav>
-        </div>
-
-        <div className="mt-auto p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100">
           <div className="flex items-center gap-3 px-2 mb-4">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Avatar" className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 object-cover" />
@@ -248,11 +245,15 @@ export default function AbsenPage() {
               <p className="text-xs text-slate-500">{profile?.divisi || 'Peserta OJT'}</p>
             </div>
           </div>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 font-semibold hover:bg-red-50 rounded-xl transition-all">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Keluar Sesi
+          </button>
         </div>
-      </aside>
+      </nav>
 
-      {/* KONTEN UTAMA ABSENSI */}
-      <main className="flex-1 flex flex-col h-[100dvh] overflow-hidden relative">
+      {/* KONTEN UTAMA ABSENSI (Dengan margin kiri untuk desktop) */}
+      <main className="flex-1 md:ml-64 flex flex-col h-[100dvh] overflow-hidden relative">
         <header className="px-5 py-5 md:px-8 md:py-6 flex items-center justify-between bg-white md:bg-transparent border-b border-slate-100 md:border-none shadow-sm md:shadow-none z-10">
           <div className="flex items-center gap-3 md:gap-4">
             {/* Tombol Back Khusus Mobile */}
@@ -273,7 +274,7 @@ export default function AbsenPage() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-28 md:pb-8 pt-4 md:pt-0">
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-6 pt-4 md:pt-0">
             <div className="flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-[600px]">
               
               {/* KOLOM KIRI: PETA LOKASI */}
@@ -287,16 +288,30 @@ export default function AbsenPage() {
                     Sistem Aktif
                   </span>
                 </div>
+                
+                {/* --- BAGIAN PETA DENGAN OVERLAY RADIUS --- */}
                 <div className="flex-1 relative bg-slate-100">
                   <iframe 
                     width="100%" 
                     height="100%" 
                     frameBorder="0" 
                     style={{ border: 0 }} 
-                    src={`https://maps.google.com/maps?q=${targetLat},${targetLng}&z=17&output=embed`} 
+                    src={`https://maps.google.com/maps?q=${targetLat},${targetLng}&z=19&output=embed`} 
                     allowFullScreen
                     className="absolute inset-0"
                   ></iframe>
+
+                  {/* Overlay Visual Radius 50m */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-[150px] h-[150px] rounded-full border-4 border-dashed border-blue-500/60 bg-blue-500/10 flex items-center justify-center">
+                      <div className="w-3 h-3 bg-blue-600 rounded-full shadow-lg animate-ping"></div>
+                    </div>
+                  </div>
+
+                  {/* Label Indikator */}
+                  <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-700 shadow-sm">
+                    Radius Absensi: 50 Meter
+                  </div>
                 </div>
               </div>
 
@@ -418,26 +433,6 @@ export default function AbsenPage() {
             </div>
         </div>
       </main>
-
-      {/* BOTTOM NAVIGATION (MOBILE) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 pb-safe pt-2 px-6 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div className="max-w-md mx-auto flex justify-between items-center pb-4">
-          <button onClick={() => router.push('/ojt')} className="flex flex-col items-center p-2 flex-1 transition-colors text-slate-400 hover:text-slate-700">
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            <span className="text-[10px] font-semibold">Beranda</span>
-          </button>
-          
-          <button className="flex flex-col items-center p-2 flex-1 transition-colors text-blue-600">
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            <span className="text-[10px] font-semibold">Absensi</span>
-          </button>
-          
-          <button onClick={() => router.push('/settings')} className="flex flex-col items-center p-2 flex-1 transition-colors text-slate-400 hover:text-slate-700">
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            <span className="text-[10px] font-semibold">Profil</span>
-          </button>
-        </div>
-      </div>
 
     </div>
   )

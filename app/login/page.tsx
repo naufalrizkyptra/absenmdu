@@ -100,7 +100,7 @@ export default function Login() {
         
         <div className="flex justify-center mb-5">
           <div className="w-20 h-20 relative">
-            <Image src="/logo-mdu.PNG" alt="MDU Logo" fill className="object-contain drop-shadow-sm" priority />
+            <Image src="/logo-mdu.PNG" alt="MDU Logo" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-contain drop-shadow-sm" priority />
           </div>
         </div>
 

@@ -685,11 +685,6 @@ export default function PenilaianPage() {
                 </div>
 
                 <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingRight: '1rem', paddingBottom: '0.2rem' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 900, color: '#1e1b4b', margin: '0 0 3rem 0' }}>Chief Executive Officer</p>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 900, color: '#1e1b4b', margin: 0 }}>Sofian Wira Hadi, M.Kom</p>
-                    <div style={{ borderBottom: '1px solid #1e293b', width: '100%', marginTop: '0.1rem' }}></div>
-                  </div>
                 </div>
               </div>
             </div>

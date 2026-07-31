@@ -48,9 +48,56 @@ export default function VerifikasiIzinPage() {
     fetchMentorAndIzin()
   }, [router])
 
+  const handleAcceptAll = async () => {
+    const pendingIzin = izinData.filter(t => t.status === 'Menunggu Verifikasi')
+    if (pendingIzin.length === 0) return
+
+    const toastId = toast.loading(`Memproses persetujuan ${pendingIzin.length} izin...`)
+
+    try {
+      const pendingIds = pendingIzin.map(t => t.id)
+      const { error: updateError } = await supabase
+        .from('izin_ojt')
+        .update({ status: 'Disetujui' })
+        .in('id', pendingIds)
+
+      if (updateError) throw updateError
+
+      const attendanceData = pendingIzin.map(t => {
+        const checkInTime = new Date(`${t.tanggal_izin}T08:00:00+07:00`).toISOString()
+        const checkOutTime = new Date(`${t.tanggal_izin}T14:00:00+07:00`).toISOString()
+        return {
+          user_id: t.user_id,
+          check_in_time: checkInTime,
+          check_out_time: checkOutTime,
+          status: t.kategori,
+          latitude: 0,
+          longitude: 0,
+          lat_out: 0,
+          lng_out: 0
+        }
+      })
+
+      const { error: absensiError } = await supabase
+        .from('attendance')
+        .insert(attendanceData)
+
+      if (absensiError) {
+        console.error('Gagal memasukkan absensi:', absensiError)
+        toast.warning(`Semua izin disetujui, namun sebagian/semua gagal dicatat ke absensi.`, { id: toastId })
+      } else {
+        toast.success(`${pendingIzin.length} Izin berhasil disetujui dan dicatat ke Absensi harian!`, { id: toastId })
+      }
+
+      setIzinData(izinData.map(t => pendingIds.includes(t.id) ? { ...t, status: 'Disetujui' } : t))
+    } catch (err: any) {
+      toast.error(`Terjadi kesalahan: ${err.message}`, { id: toastId })
+    }
+  }
+
   const handleUpdateStatus = async (izinId: string, userId: string, tanggalIzin: string, kategori: string, newStatus: 'Disetujui' | 'Ditolak') => {
     const toastId = toast.loading(`Memproses verifikasi...`)
-    
+
     try {
       const { error } = await supabase.from('izin_ojt').update({ status: newStatus }).eq('id', izinId)
 
@@ -99,18 +146,18 @@ export default function VerifikasiIzinPage() {
       {/* MOBILE DRAWER OVERLAY */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
-          <div 
+          <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
             onClick={() => setMobileMenuOpen(false)}
           ></div>
-          
+
           <div className="relative flex flex-col w-64 bg-white h-full shadow-2xl z-50 animate-in slide-in-from-left duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-[#1e1b4b]">
               <div className="flex items-center gap-3">
                 <img src="/logo-mdu.PNG" alt="MDU Logo" className="w-8 h-8 object-contain" />
                 <span className="text-lg font-bold text-white tracking-tight">MDU Panel</span>
               </div>
-              <button 
+              <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all"
               >
@@ -161,7 +208,7 @@ export default function VerifikasiIzinPage() {
           </div>
         </div>
       )}
-      
+
       {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r border-slate-100 hidden md:flex flex-col h-screen fixed z-20 shadow-sm overflow-hidden">
         <div className="p-6 flex items-center gap-3 border-b border-slate-100">
@@ -195,7 +242,7 @@ export default function VerifikasiIzinPage() {
 
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => router.push('/mentor')}
                 className="md:hidden p-3 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all border border-white/20"
               >
@@ -209,7 +256,7 @@ export default function VerifikasiIzinPage() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(true)}
               className="md:hidden flex p-3 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all border border-white/20 animate-fade-in"
             >
@@ -222,12 +269,24 @@ export default function VerifikasiIzinPage() {
 
         <div className="flex-1 overflow-y-auto px-4 md:px-10 pb-10 -mt-12 relative z-10">
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6">
-            <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit mb-6">
-              {['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].map(status => (
-                <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-white text-teal-900 shadow-sm' : 'text-slate-500'}`}>
-                  {status} ({izinData.filter(t => t.status === status).length})
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
+                {['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].map(status => (
+                  <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-white text-teal-900 shadow-sm' : 'text-slate-500'}`}>
+                    {status} ({izinData.filter(t => t.status === status).length})
+                  </button>
+                ))}
+              </div>
+
+              {filterStatus === 'Menunggu Verifikasi' && izinData.filter(t => t.status === 'Menunggu Verifikasi').length > 0 && (
+                <button
+                  onClick={handleAcceptAll}
+                  className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2 w-fit"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Setujui Semua
                 </button>
-              ))}
+              )}
             </div>
 
             <div className="overflow-x-auto">

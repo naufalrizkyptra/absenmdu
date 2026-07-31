@@ -60,6 +60,26 @@ export default function VerifikasiTugasPage() {
     }
   }
 
+  const handleApproveAll = async () => {
+    const tasksToApprove = tasks.filter(t => t.status === 'Menunggu Verifikasi')
+    if (tasksToApprove.length === 0) return
+
+    const toastId = toast.loading(`Memproses persetujuan ${tasksToApprove.length} tugas...`)
+    const taskIds = tasksToApprove.map(t => t.id)
+
+    const { error } = await supabase
+      .from('boost_tasks')
+      .update({ status: 'Disetujui' })
+      .in('id', taskIds)
+
+    if (error) {
+      toast.error('Gagal menyetujui semua tugas.', { id: toastId })
+    } else {
+      toast.success(`${tasksToApprove.length} tugas berhasil disetujui.`, { id: toastId })
+      setTasks(tasks.map(t => taskIds.includes(t.id) ? { ...t, status: 'Disetujui' } : t))
+    }
+  }
+
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
   const filteredTasks = tasks.filter(t => t.status === filterStatus)
 
@@ -223,12 +243,24 @@ export default function VerifikasiTugasPage() {
 
         <div className="flex-1 overflow-y-auto px-4 md:px-10 pb-10 -mt-12 relative z-10">
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6">
-            <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit mb-6">
-              {['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].map(status => (
-                <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-white text-indigo-900 shadow-sm' : 'text-slate-500'}`}>
-                  {status} ({tasks.filter(t => t.status === status).length})
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
+                {['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].map(status => (
+                  <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-white text-indigo-900 shadow-sm' : 'text-slate-500'}`}>
+                    {status} ({tasks.filter(t => t.status === status).length})
+                  </button>
+                ))}
+              </div>
+              
+              {filterStatus === 'Menunggu Verifikasi' && filteredTasks.length > 0 && (
+                <button 
+                  onClick={handleApproveAll}
+                  className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  Setujui Semua Tugas
                 </button>
-              ))}
+              )}
             </div>
 
             <div className="overflow-x-auto">

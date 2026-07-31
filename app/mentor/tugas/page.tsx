@@ -246,7 +246,7 @@ export default function VerifikasiTugasPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
                 {['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].map(status => (
-                  <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}>
+                  <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}>
                     {status} ({tasks.filter(t => t.status === status).length})
                   </button>
                 ))}

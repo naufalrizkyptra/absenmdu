@@ -97,7 +97,7 @@ export default function Login() {
       {/* Wrapper for the card to add a custom gradient shadow */}
       <div className="relative w-full max-w-[1000px]">
         {/* Glowing Gradient Shadow (MDU Colors: Blue, Cyan, Yellow/Gold) */}
-        <div className="absolute -inset-2 md:-inset-3 bg-gradient-to-r from-indigo-900 via-purple-800 to-black rounded-[2.5rem] blur-2xl opacity-40"></div>
+        <div className="absolute -inset-2 md:-inset-3 bg-gradient-to-r from-[#0A5FFF] via-[#00CFFF] to-[#FFD700] rounded-[2.5rem] blur-2xl opacity-40"></div>
         
         {/* Main Card */}
         <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-3 md:p-4 flex flex-col md:flex-row overflow-hidden relative min-h-[500px] md:min-h-[600px] z-10 border border-white/50">
@@ -105,7 +105,7 @@ export default function Login() {
           {/* KIRI: BRANDING (Hidden on mobile) */}
           <div className="hidden md:flex md:w-[45%] lg:w-1/2 relative bg-blue-900 rounded-[2rem] overflow-hidden flex-col justify-end p-10 lg:p-12">
             {/* Mesh Gradient Background (MDU Colors) */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-800 to-black opacity-90"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0A5FFF] via-[#00CFFF] to-[#FFD700] opacity-90"></div>
             {/* Blurred color blobs */}
             <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-700 rounded-full mix-blend-screen filter blur-[80px] opacity-50"></div>
             <div className="absolute top-1/4 -right-20 w-80 h-80 bg-indigo-600 rounded-full mix-blend-screen filter blur-[90px] opacity-30"></div>

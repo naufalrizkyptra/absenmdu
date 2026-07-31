@@ -93,37 +93,43 @@ export default function Login() {
 
   return (
     <div className={`min-h-screen flex items-center justify-center bg-[#f4f7fc] p-4 md:p-8 ${inter.className}`}>
-      {/* Main Card */}
-      <div className="w-full max-w-[1000px] bg-white rounded-[2rem] md:rounded-[2.5rem] p-3 md:p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col md:flex-row overflow-hidden relative min-h-[500px] md:min-h-[600px]">
+      
+      {/* Wrapper for the card to add a custom gradient shadow */}
+      <div className="relative w-full max-w-[1000px]">
+        {/* Glowing Gradient Shadow (MDU Colors: Blue, Cyan, Yellow/Gold) */}
+        <div className="absolute -inset-2 md:-inset-3 bg-gradient-to-r from-blue-600 via-cyan-400 to-yellow-400 rounded-[2.5rem] blur-2xl opacity-30"></div>
         
-        {/* KIRI: BRANDING (Hidden on mobile) */}
-        <div className="hidden md:flex md:w-[45%] lg:w-1/2 relative bg-[#4f46e5] rounded-[2rem] overflow-hidden flex-col justify-between p-10 lg:p-12">
-          {/* Mesh Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#3b82f6] via-[#6366f1] to-[#ec4899] opacity-90"></div>
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-300 rounded-full mix-blend-screen filter blur-[80px] opacity-60"></div>
-          <div className="absolute top-1/4 -right-20 w-80 h-80 bg-purple-400 rounded-full mix-blend-screen filter blur-[80px] opacity-60"></div>
-          <div className="absolute -bottom-10 left-10 w-96 h-96 bg-pink-400 rounded-full mix-blend-screen filter blur-[90px] opacity-50"></div>
+        {/* Main Card */}
+        <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-3 md:p-4 flex flex-col md:flex-row overflow-hidden relative min-h-[500px] md:min-h-[600px] z-10 border border-white/50">
+          
+          {/* KIRI: BRANDING (Hidden on mobile) */}
+          <div className="hidden md:flex md:w-[45%] lg:w-1/2 relative bg-blue-900 rounded-[2rem] overflow-hidden flex-col justify-end p-10 lg:p-12">
+            {/* Mesh Gradient Background (MDU Colors) */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-600 to-cyan-500 opacity-90"></div>
+            {/* Blurred color blobs */}
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-400 rounded-full mix-blend-screen filter blur-[80px] opacity-50"></div>
+            <div className="absolute top-1/4 -right-20 w-80 h-80 bg-yellow-400 rounded-full mix-blend-screen filter blur-[90px] opacity-30"></div>
+            <div className="absolute -bottom-10 left-10 w-96 h-96 bg-blue-400 rounded-full mix-blend-screen filter blur-[90px] opacity-60"></div>
 
-          <div className="relative z-10">
-            {/* Top Left Logo (White) */}
-            <div className="w-12 h-12 relative drop-shadow-md">
-              <Image src="/logo-mdu.PNG" alt="MDU Logo" fill sizes="48px" className="object-contain brightness-0 invert" priority />
+            <div className="relative z-10 text-white">
+              {/* Logo MDU (Original Color, Larger) */}
+              <div className="w-20 h-20 relative drop-shadow-2xl mb-6 bg-white/10 backdrop-blur-md rounded-2xl p-2 border border-white/20">
+                <Image src="/logo-mdu.PNG" alt="MDU Logo" fill sizes="80px" className="object-contain p-1" priority />
+              </div>
+              
+              <p className="text-sm font-semibold text-white/90 mb-2 tracking-wide uppercase drop-shadow-md">Mandiri Digital Universe</p>
+              <h1 className="text-3xl lg:text-4xl font-bold leading-[1.15] mb-4 tracking-tight drop-shadow-md">
+                Tumbuh Bersama,<br/>Sukses Bersama.
+              </h1>
+              <p className="text-sm text-white/80 max-w-sm leading-relaxed font-medium">
+                Dapatkan akses ke personal hub Anda untuk memantau kehadiran, progres tugas, dan evaluasi dalam satu platform yang terintegrasi.
+              </p>
             </div>
           </div>
 
-          <div className="relative z-10 text-white mt-20">
-            <p className="text-sm font-semibold text-white/80 mb-2 tracking-wide uppercase">Mandiri Digital Universe</p>
-            <h1 className="text-3xl lg:text-4xl font-bold leading-[1.15] mb-4 tracking-tight">
-              Tumbuh Bersama,<br/>Sukses Bersama.
-            </h1>
-            <p className="text-sm text-white/80 max-w-sm leading-relaxed font-medium">
-              Dapatkan akses ke personal hub Anda untuk memantau kehadiran, progres tugas, dan evaluasi dalam satu platform yang terintegrasi.
-            </p>
-          </div>
-        </div>
+          {/* KANAN: FORM LOGIN */}
+          <div className="w-full md:w-[55%] lg:w-1/2 flex items-center justify-center p-6 sm:p-10 lg:p-12 bg-white relative rounded-3xl md:rounded-none">
 
-        {/* KANAN: FORM LOGIN */}
-        <div className="w-full md:w-[55%] lg:w-1/2 flex items-center justify-center p-6 sm:p-10 lg:p-12 bg-white relative rounded-3xl md:rounded-none">
           
           <div className="w-full max-w-[360px]">
             

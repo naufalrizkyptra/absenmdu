@@ -246,7 +246,7 @@ export default function VerifikasiTugasPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
                 {['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].map(status => (
-                  <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-white text-indigo-900 shadow-sm' : 'text-slate-500'}`}>
+                  <button key={status} onClick={() => setFilterStatus(status)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filterStatus === status ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}>
                     {status} ({tasks.filter(t => t.status === status).length})
                   </button>
                 ))}
@@ -288,7 +288,7 @@ export default function VerifikasiTugasPage() {
                       <td className="p-4 text-right">
                         {t.status === 'Menunggu Verifikasi' ? (
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => handleUpdateStatus(t.id, 'Disetujui')} className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold hover:bg-emerald-100">✓ Setujui</button>
+                            <button onClick={() => handleUpdateStatus(t.id, 'Disetujui')} className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 shadow-sm">✓ Setujui</button>
                             <button onClick={() => handleUpdateStatus(t.id, 'Ditolak')} className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-100">✕ Tolak</button>
                           </div>
                         ) : <span className="text-[10px] font-black uppercase">{t.status}</span>}

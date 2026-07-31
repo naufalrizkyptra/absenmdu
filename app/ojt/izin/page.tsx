@@ -13,7 +13,8 @@ export default function IzinPage() {
   const [history, setHistory] = useState<any[]>([])
   
   const [formData, setFormData] = useState({
-    tanggal_izin: '',
+    tanggal_mulai: '',
+    tanggal_selesai: '',
     kategori: 'Sakit',
     keterangan: ''
   })
@@ -72,8 +73,20 @@ export default function IzinPage() {
   const handleSubmitIzin = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.tanggal_izin || !formData.kategori || !formData.keterangan || !file) {
+    if (!formData.tanggal_mulai || !formData.tanggal_selesai || !formData.kategori || !formData.keterangan || !file) {
       toast.error('Mohon lengkapi semua form dan unggah bukti surat.')
+      return
+    }
+
+    const startDate = new Date(formData.tanggal_mulai)
+    const endDate = new Date(formData.tanggal_selesai)
+    
+    // Normalize time to 00:00:00 to avoid timezone shift issues
+    startDate.setHours(0, 0, 0, 0)
+    endDate.setHours(0, 0, 0, 0)
+    
+    if (endDate < startDate) {
+      toast.error('Tanggal selesai tidak boleh lebih awal dari tanggal mulai.')
       return
     }
 
@@ -98,25 +111,41 @@ export default function IzinPage() {
         
       const bukti_link = publicUrlData.publicUrl
 
-      // 2. Simpan ke database
-      const { data, error } = await supabase
-        .from('izin_ojt')
-        .insert([{
+      // 2. Simpan ke database (Loop untuk rentang hari)
+      const dateList = []
+      let currentDate = new Date(startDate)
+      
+      while (currentDate <= endDate) {
+        // Format YYYY-MM-DD
+        const year = currentDate.getFullYear()
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0')
+        const day = String(currentDate.getDate()).padStart(2, '0')
+        const formattedDate = `${year}-${month}-${day}`
+        
+        dateList.push({
           user_id: user.id,
-          tanggal_izin: formData.tanggal_izin,
+          tanggal_izin: formattedDate,
           kategori: formData.kategori,
           keterangan: formData.keterangan,
           bukti_link: bukti_link,
           status: 'Menunggu Verifikasi'
-        }])
+        })
+        
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+
+      const { data, error } = await supabase
+        .from('izin_ojt')
+        .insert(dateList)
         .select()
-        .single()
 
       if (error) throw error
 
-      toast.success('Pengajuan izin berhasil dikirim!', { id: toastId })
-      setHistory([data, ...history])
-      setFormData({ tanggal_izin: '', kategori: 'Sakit', keterangan: '' })
+      toast.success(`Pengajuan izin untuk ${dateList.length} hari berhasil dikirim!`, { id: toastId })
+      // Urutkan array agar riwayat terbaru tampil di atas
+      const newEntries = data || []
+      setHistory([...newEntries.reverse(), ...history])
+      setFormData({ tanggal_mulai: '', tanggal_selesai: '', kategori: 'Sakit', keterangan: '' })
       setFile(null)
       // Reset input file (workaround manual element select)
       const fileInput = document.getElementById('file_bukti') as HTMLInputElement
@@ -242,15 +271,28 @@ export default function IzinPage() {
               </div>
 
               <form onSubmit={handleSubmitIzin} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Tanggal Izin</label>
-                  <input 
-                    type="date" 
-                    required
-                    value={formData.tanggal_izin}
-                    onChange={(e) => setFormData({...formData, tanggal_izin: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-500 transition-all text-slate-900 shadow-inner"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Tanggal Mulai</label>
+                    <input 
+                      type="date" 
+                      required
+                      value={formData.tanggal_mulai}
+                      onChange={(e) => setFormData({...formData, tanggal_mulai: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-500 transition-all text-slate-900 shadow-inner"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Tanggal Selesai</label>
+                    <input 
+                      type="date" 
+                      required
+                      min={formData.tanggal_mulai}
+                      value={formData.tanggal_selesai}
+                      onChange={(e) => setFormData({...formData, tanggal_selesai: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-500 transition-all text-slate-900 shadow-inner"
+                    />
+                  </div>
                 </div>
 
                 <div>

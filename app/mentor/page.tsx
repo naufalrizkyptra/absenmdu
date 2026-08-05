@@ -378,6 +378,7 @@ export default function MentorDashboard() {
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider">
                       <th className="p-4 pl-6">Profil Peserta</th>
+                      <th className="p-4">Hari & Tanggal</th>
                       <th className="p-4">Status</th>
                       <th className="p-4">Waktu Masuk</th>
                       <th className="p-4">Waktu Pulang</th>
@@ -396,6 +397,10 @@ export default function MentorDashboard() {
                             <div className="text-xs font-semibold text-slate-400 mt-0.5">{m.nip || '-'} • <span className="text-indigo-600">{m.divisi}</span></div>
                           </td>
                           
+                          <td className="p-4 text-xs font-bold text-indigo-900">
+                            {absenHariIni ? new Date(absenHariIni.check_in_time).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                          </td>
+
                           <td className="p-4">
                             {absenHariIni ? (
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-inner ${absenHariIni.status === 'Terlambat' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}>

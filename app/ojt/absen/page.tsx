@@ -10,7 +10,7 @@ const LOKASI_CABANG: Record<string, { lat: number, lng: number }> = {
   'Jatiwaringin': { lat: -6.247942342659016, lng: 106.90724753666649 },
   'Margonda': { lat: -6.357711365116603, lng: 106.83183796973027 },
   'BSI Slipi': { lat: -6.1898682555279985, lng: 106.79550692558983 },
-  'BSI BSD': { lat: -6.3038940586147785, lng: 106.6876169784744 },
+  'BSI BSD': { lat: -6.304062726210843, lng: 106.6872615116959 },
   'BSI Ciledug': { lat: -6.237729787450286, lng: 106.76291247847368 },
   'Rawamangun': { lat: -6.192347469094796, lng: 106.88095207476705 },
 }
@@ -368,10 +368,10 @@ export default function AbsenPage() {
                     onClick={handleAbsen}
                     disabled={distance === null || distance > MAX_RADIUS_METERS || isSubmitting || (todayRecord?.check_in_time && todayRecord?.check_out_time) || isBelumWaktunyaPulang}
                     className={`w-full font-bold py-3.5 rounded-xl transition-all text-sm md:text-base ${distance === null || distance > MAX_RADIUS_METERS || isSubmitting || (todayRecord?.check_in_time && todayRecord?.check_out_time) || isBelumWaktunyaPulang
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
-                        : !todayRecord
-                          ? 'bg-[#1e1b4b] hover:bg-blue-700 text-white shadow-md'
-                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
+                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
+                      : !todayRecord
+                        ? 'bg-[#1e1b4b] hover:bg-blue-700 text-white shadow-md'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
                       }`}
                   >
                     {isSubmitting ? 'Memproses Data...' :

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
-import { createOJTAccount, updateOJTProfile, deleteOJTAccount, resetPasswordByMentor } from '../actions'
+import { createOJTAccount, updateOJTProfile, deleteOJTAccount, archiveOJTAccount, resetPasswordByMentor } from '../actions'
 import Swal from 'sweetalert2'
 import { Toaster, toast } from 'sonner'
 
@@ -16,6 +16,7 @@ export default function DataOJTPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingUser, setEditingUser] = useState<any>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [tab, setTab] = useState('aktif')
   
   const [showAddModal, setShowAddModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
@@ -105,6 +106,27 @@ export default function DataOJTPage() {
     setEditingUser(null)
   }
 
+  const handleArchiveOJT = async (id: string, name: string) => {
+    const confirm = await Swal.fire({
+      title: 'Arsipkan Peserta?',
+      text: `Data nilai & riwayat magang atas nama ${name} akan tetap tersimpan, hanya dipindah ke arsip.`,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonColor: '#4f46e5',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Arsipkan',
+      cancelButtonText: 'Batal',
+      customClass: { confirmButton: 'rounded-xl', cancelButton: 'rounded-xl' }
+    })
+    if (confirm.isConfirmed) {
+      setIsSubmitting(true)
+      const res = await archiveOJTAccount(id)
+      if (res.success) Swal.fire('Diarsipkan', 'Data peserta telah berhasil diarsipkan.', 'success').then(() => window.location.reload())
+      else Swal.fire('Gagal', res.message, 'error')
+      setIsSubmitting(false)
+    }
+  }
+
   const handleDeleteOJT = async (id: string, name: string) => {
     const confirm = await Swal.fire({
       title: 'Hapus Data Peserta?',
@@ -128,6 +150,10 @@ export default function DataOJTPage() {
 
   const filteredMentees = mentees.filter((m) => {
     const query = searchQuery.toLowerCase()
+    const status = m.status_ojt || 'aktif'
+    
+    if (status !== tab) return false
+
     return (
       m.name?.toLowerCase().includes(query) ||
       m.nip?.toLowerCase().includes(query) ||
@@ -380,9 +406,27 @@ export default function DataOJTPage() {
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
             
             {/* KONTROL HEADER (SEARCH & TAMBAH) */}
-            <div className="p-5 md:p-6 border-b border-slate-100 bg-white flex flex-col md:flex-row justify-between md:items-center gap-4">
-              <div className="relative w-full md:w-96">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+            <div className="p-5 md:p-6 border-b border-slate-100 bg-white flex flex-col gap-4">
+              
+              {/* TABS FILTER */}
+              <div className="flex gap-2 mb-2">
+                <button 
+                  onClick={() => setTab('aktif')}
+                  className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${tab === 'aktif' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                >
+                  Peserta Aktif
+                </button>
+                <button 
+                  onClick={() => setTab('selesai')}
+                  className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${tab === 'selesai' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                >
+                  Alumni (Arsip)
+                </button>
+              </div>
+
+              <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div className="relative w-full md:w-96">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                   <svg className="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
                 <input
@@ -402,9 +446,10 @@ export default function DataOJTPage() {
                 Tambah Peserta
               </button>
             </div>
+          </div>
 
-            {/* AREA TABEL */}
-            <div className="p-0 overflow-x-auto custom-scrollbar">
+          {/* AREA TABEL */}
+          <div className="p-0 overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                 <thead>
                   <tr className="bg-slate-50/50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
@@ -487,10 +532,21 @@ export default function DataOJTPage() {
                               >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                               </button>
+                              
+                              {tab === 'aktif' && (
+                                <button 
+                                  onClick={() => handleArchiveOJT(m.id, m.name)} 
+                                  className="w-9 h-9 flex items-center justify-center bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl shadow-sm transition-all border border-indigo-100 tooltip-trigger"
+                                  title="Arsipkan"
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                                </button>
+                              )}
+
                               <button 
                                 onClick={() => handleDeleteOJT(m.id, m.name)} 
-                                className="w-9 h-9 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl shadow-sm transition-all border border-rose-100 tooltip-trigger"
-                                title="Hapus Permanen"
+                                className="w-9 h-9 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl shadow-sm transition-all border border-rose-100 tooltip-trigger opacity-60 hover:opacity-100"
+                                title="Hapus Permanen (Darurat)"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>

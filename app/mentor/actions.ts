@@ -113,7 +113,23 @@ export async function updateOJTProfile(userId: string, updateData: any) {
   }
 }
 
-// 4. FUNGSI HAPUS AKUN OJT PERMANEN
+// 4. FUNGSI ARSIPKAN AKUN OJT (Tidak Dihapus)
+export async function archiveOJTAccount(userId: string) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('users')
+      .update({ status_ojt: 'selesai' })
+      .eq('id', userId)
+      
+    if (error) throw error
+    
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, message: error.message }
+  }
+}
+
+// 5. FUNGSI HAPUS AKUN OJT PERMANEN
 export async function deleteOJTAccount(userId: string) {
   try {
     // Hapus dari tabel users

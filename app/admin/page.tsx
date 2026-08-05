@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null)
   const [allOjt, setAllOjt] = useState<any[]>([])
   const [allMentors, setAllMentors] = useState<any[]>([])
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toLocaleDateString('en-CA'))
   const [attendances, setAttendances] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
@@ -42,22 +43,26 @@ export default function AdminDashboard() {
         setAllOjt(usersData.filter(u => u.role === 'ojt'))
         setAllMentors(usersData.filter(u => u.role === 'mentor'))
       }
-        
-      // 3. Tarik SEMUA data absen hari ini se-MDU
-      const today = new Date().toISOString().split('T')[0]
-      const { data: absenData } = await supabase
-        .from('attendance')
-        .select('*, users(name, divisi, asal_kantor)')
-        .gte('check_in_time', `${today}T00:00:00`)
-        .order('check_in_time', { ascending: false })
-        
-      if (absenData) setAttendances(absenData)
       
       setLoading(false)
     }
 
     fetchAdminData()
   }, [router])
+
+  useEffect(() => {
+    const fetchAttendanceByDate = async () => {
+      const { data: absenData } = await supabase
+        .from('attendance')
+        .select('*, users(name, divisi, asal_kantor)')
+        .gte('check_in_time', `${selectedDate}T00:00:00`)
+        .lte('check_in_time', `${selectedDate}T23:59:59`)
+        .order('check_in_time', { ascending: false })
+        
+      if (absenData) setAttendances(absenData)
+    }
+    fetchAttendanceByDate()
+  }, [selectedDate])
 
   const formatTime = (isoString: string) => {
     return new Date(isoString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
@@ -252,13 +257,26 @@ export default function AdminDashboard() {
 
           {/* TABEL ABSENSI SEMUA CABANG */}
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-              <h2 className="text-lg font-bold text-slate-800">Log Kehadiran Global</h2>
+            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Log Kehadiran Global</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pantauan untuk tanggal: {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <div className="relative">
+                <input 
+                  type="date" 
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full sm:w-auto pl-4 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner transition-all"
+                />
+              </div>
             </div>
             <div className="p-0 overflow-x-auto">
               {attendances.length === 0 ? (
                 <div className="text-center py-10">
-                  <p className="text-sm font-semibold text-slate-400">Belum ada data absensi masuk hari ini.</p>
+                  <p className="text-sm font-semibold text-slate-400">Belum ada data absensi untuk tanggal ini.</p>
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse whitespace-nowrap">
@@ -267,6 +285,7 @@ export default function AdminDashboard() {
                       <th className="p-4 pl-6">Nama Lengkap</th>
                       <th className="p-4">Cabang</th>
                       <th className="p-4">Divisi</th>
+                      <th className="p-4">Hari & Tanggal</th>
                       <th className="p-4">In</th>
                       <th className="p-4">Out</th>
                       <th className="p-4 text-right pr-6">Status</th>
@@ -278,6 +297,7 @@ export default function AdminDashboard() {
                         <td className="p-4 pl-6 font-bold text-slate-800 text-sm">{absen.users?.name || 'Tanpa Nama'}</td>
                         <td className="p-4 text-xs font-semibold text-slate-600">{absen.users?.asal_kantor || '-'}</td>
                         <td className="p-4 text-xs font-medium text-slate-500">{absen.users?.divisi || '-'}</td>
+                        <td className="p-4 text-xs font-bold text-indigo-900">{new Date(absen.check_in_time).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</td>
                         <td className="p-4 text-sm font-bold text-slate-800">{formatTime(absen.check_in_time)}</td>
                         <td className="p-4 text-sm font-bold text-emerald-600">{absen.check_out_time ? formatTime(absen.check_out_time) : '-'}</td>
                         <td className="p-4 pr-6 text-right">

@@ -131,23 +131,27 @@ export default function AbsenPage() {
   const JAM_PULANG_START = "15:00"
 
   const isBelumWaktunyaPulang = todayRecord && !todayRecord.check_out_time && currentTime !== '' && currentTime < JAM_PULANG_START
+  const isJumat = new Date().getDay() === 5
 
   const handleAbsen = async () => {
-    if (distance === null || distance > MAX_RADIUS_METERS || !userLoc || isBelumWaktunyaPulang) return
+    if ((!isJumat && (distance === null || distance > MAX_RADIUS_METERS || !userLoc)) || isBelumWaktunyaPulang) return
     setIsSubmitting(true)
     const sekarang = new Date()
     const jamMenitSekarang = sekarang.getHours().toString().padStart(2, '0') + ":" + sekarang.getMinutes().toString().padStart(2, '0')
 
     if (!todayRecord) {
       const isTerlambat = jamMenitSekarang > JAM_MASUK_DEADLINE
+      let finalStatus = isTerlambat ? 'Terlambat' : 'Hadir'
+      if (isJumat) finalStatus = isTerlambat ? 'Terlambat (WFH)' : 'Hadir (WFH)'
+
       const { data, error } = await supabase
         .from('attendance')
         .insert([{
           user_id: user.id,
           check_in_time: new Date().toISOString(),
-          latitude: userLoc.lat,
-          longitude: userLoc.lng,
-          status: isTerlambat ? 'Terlambat' : 'Hadir'
+          latitude: userLoc?.lat || 0,
+          longitude: userLoc?.lng || 0,
+          status: finalStatus
         }])
         .select().single()
 
@@ -164,8 +168,8 @@ export default function AbsenPage() {
         .from('attendance')
         .update({
           check_out_time: sekarang.toISOString(),
-          lat_out: userLoc.lat,
-          lng_out: userLoc.lng
+          lat_out: userLoc?.lat || 0,
+          lng_out: userLoc?.lng || 0
         })
         .eq('id', todayRecord.id)
         .select().single()
@@ -343,7 +347,14 @@ export default function AbsenPage() {
                 <h3 className="text-lg font-bold text-slate-800 mb-4">Validasi Kehadiran</h3>
 
                 <div className="bg-[#f8fafc] rounded-2xl p-5 text-center mb-5 border border-slate-100">
-                  {distance !== null ? (
+                  {isJumat ? (
+                    <>
+                      <p className="text-2xl md:text-3xl font-black text-blue-600 tracking-tight mb-2">Mode WFH Aktif</p>
+                      <p className="text-sm font-semibold text-slate-500">
+                        Hari Jumat bebas presensi dari mana saja.
+                      </p>
+                    </>
+                  ) : distance !== null ? (
                     <>
                       <p className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">{distance} <span className="text-lg md:text-xl font-medium text-slate-500">m</span></p>
                       <p className={`text-sm font-semibold mt-2 ${distance <= MAX_RADIUS_METERS ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -363,24 +374,23 @@ export default function AbsenPage() {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     Deteksi Lokasi GPS
                   </button>
-
                   <button
                     onClick={handleAbsen}
-                    disabled={distance === null || distance > MAX_RADIUS_METERS || isSubmitting || (todayRecord?.check_in_time && todayRecord?.check_out_time) || isBelumWaktunyaPulang}
-                    className={`w-full font-bold py-3.5 rounded-xl transition-all text-sm md:text-base ${distance === null || distance > MAX_RADIUS_METERS || isSubmitting || (todayRecord?.check_in_time && todayRecord?.check_out_time) || isBelumWaktunyaPulang
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
-                      : !todayRecord
-                        ? 'bg-[#1e1b4b] hover:bg-blue-700 text-white shadow-md'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
+                    disabled={(!isJumat && (distance === null || distance > MAX_RADIUS_METERS)) || isSubmitting || (todayRecord?.check_in_time && todayRecord?.check_out_time) || isBelumWaktunyaPulang}
+                    className={`w-full font-bold py-3.5 rounded-xl transition-all text-sm md:text-base ${(!isJumat && (distance === null || distance > MAX_RADIUS_METERS)) || isSubmitting || (todayRecord?.check_in_time && todayRecord?.check_out_time) || isBelumWaktunyaPulang
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
+                        : !todayRecord
+                          ? 'bg-[#1e1b4b] hover:bg-blue-700 text-white shadow-md'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
                       }`}
                   >
                     {isSubmitting ? 'Memproses Data...' :
-                      !todayRecord ? 'Presensi Masuk Sekarang' :
+                      !todayRecord ? (isJumat ? 'Presensi Masuk (WFH)' : 'Presensi Masuk Sekarang') :
                         todayRecord.check_out_time ? 'Presensi Selesai Hari Ini' :
-                          isBelumWaktunyaPulang ? `Belum Waktunya Pulang (${JAM_PULANG_START})` : 'Presensi Pulang Sekarang'}
+                          isBelumWaktunyaPulang ? `Belum Waktunya Pulang (${JAM_PULANG_START})` : (isJumat ? 'Presensi Pulang (WFH)' : 'Presensi Pulang Sekarang')}
                   </button>
 
-                  {distance !== null && distance > MAX_RADIUS_METERS && (
+                  {!isJumat && distance !== null && distance > MAX_RADIUS_METERS && (
                     <p className="text-center text-xs text-rose-500 font-medium flex items-center justify-center gap-1.5 mt-2 animate-pulse">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                       Akses ditolak. Anda berada di luar jangkauan kantor.

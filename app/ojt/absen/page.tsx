@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
@@ -42,6 +42,7 @@ export default function AbsenPage() {
   const [currentTime, setCurrentTime] = useState('')
   const router = useRouter()
   const [isCheckingRole, setIsCheckingRole] = useState(true)
+  const submittingRef = useRef(false)
 
   const MAX_RADIUS_METERS = 50
   const cabangAktif = profile?.asal_kantor || 'Jatiwaringin'
@@ -51,10 +52,14 @@ export default function AbsenPage() {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date()
-      setCurrentTime(now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0'))
+      setCurrentTime(
+        now.getHours().toString().padStart(2, '0') + ":" +
+        now.getMinutes().toString().padStart(2, '0') + ":" +
+        now.getSeconds().toString().padStart(2, '0')
+      )
     }
     updateTime()
-    const interval = setInterval(updateTime, 60000)
+    const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -82,14 +87,17 @@ export default function AbsenPage() {
       if (userProfile) setProfile(userProfile)
 
       const today = new Date().toLocaleDateString('en-CA')
-      const { data: todayData } = await supabase
+      const { data: todayData, error: todayErr } = await supabase
         .from('attendance')
         .select('*')
         .eq('user_id', user.id)
         .gte('check_in_time', `${today}T00:00:00`)
         .lte('check_in_time', `${today}T23:59:59`)
+        .order('check_in_time', { ascending: true })
+        .limit(1)
         .maybeSingle()
 
+      if (todayErr) console.error('Gagal memuat record hari ini:', todayErr)
       setTodayRecord(todayData)
 
       const { data: historyData } = await supabase
@@ -127,63 +135,130 @@ export default function AbsenPage() {
     )
   }
 
+  const JAM_MASUK_START = "07:00"
   const JAM_MASUK_DEADLINE = "08:00"
   const JAM_PULANG_START = "15:00"
+  const JAM_PULANG_END = "16:00"
 
   const isBelumWaktunyaPulang = todayRecord && !todayRecord.check_out_time && currentTime !== '' && currentTime < JAM_PULANG_START
-  const isJumat = new Date().getDay() === 5
+  const dayOfWeek = new Date().getDay()
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+  const isJumat = dayOfWeek === 5
+
+  const HARI_NAMA = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+  const BULAN_NAMA = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+  const todayDateObj = new Date()
+  const tanggalStr = `${HARI_NAMA[todayDateObj.getDay()]}, ${todayDateObj.getDate()} ${BULAN_NAMA[todayDateObj.getMonth()]} ${todayDateObj.getFullYear()}`
+
+  const statusHariLabel = isWeekend ? 'Hari Libur' : (isJumat ? 'Hari Kerja (WFH)' : 'Hari Kerja')
+  const statusHariColor = isWeekend ? 'bg-rose-50 text-rose-600' : (isJumat ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600')
+
+  // Keterangan kartu Masuk (dari field status di database)
+  const masukStatus = todayRecord?.check_in_time
+    ? (todayRecord.status || 'Hadir')
+    : 'Belum Absen'
+  const masukStatusColor = !todayRecord?.check_in_time
+    ? 'bg-slate-100 text-slate-500'
+    : (todayRecord.status?.toLowerCase().includes('terlambat')
+        ? 'bg-red-50 text-red-500'
+        : 'bg-emerald-50 text-emerald-600')
+
+  // Keterangan kartu Pulang (dikomputasi dari check_out_time)
+  let pulangStatus = 'Belum Pulang'
+  let pulangStatusColor = 'bg-slate-100 text-slate-500'
+  if (todayRecord?.check_out_time) {
+    const dOut = new Date(todayRecord.check_out_time)
+    const hhmmOut = dOut.getHours().toString().padStart(2, '0') + ':' + dOut.getMinutes().toString().padStart(2, '0')
+    if (hhmmOut <= JAM_PULANG_END) {
+      pulangStatus = 'Tepat Waktu'
+      pulangStatusColor = 'bg-emerald-50 text-emerald-600'
+    } else {
+      pulangStatus = 'Lembur'
+      pulangStatusColor = 'bg-blue-50 text-blue-600'
+    }
+  }
 
   const handleAbsen = async () => {
+    // Fix 1: guard re-entry sinkron (ref update langsung, beda dgn setState yang async).
+    // Mencegah klik ganda / klik lagi saat insert pertama masih in-flight.
+    if (submittingRef.current) return
     if ((!isJumat && (distance === null || distance > MAX_RADIUS_METERS || !userLoc)) || isBelumWaktunyaPulang) return
+
+    submittingRef.current = true
     setIsSubmitting(true)
-    const sekarang = new Date()
-    const jamMenitSekarang = sekarang.getHours().toString().padStart(2, '0') + ":" + sekarang.getMinutes().toString().padStart(2, '0')
+    try {
+      const sekarang = new Date()
+      const jamMenitSekarang = sekarang.getHours().toString().padStart(2, '0') + ":" + sekarang.getMinutes().toString().padStart(2, '0')
 
-    if (!todayRecord) {
-      const isTerlambat = jamMenitSekarang > JAM_MASUK_DEADLINE
-      let finalStatus = isTerlambat ? 'Terlambat' : 'Hadir'
-      if (isJumat) finalStatus = isTerlambat ? 'Terlambat (WFH)' : 'Hadir (WFH)'
+      if (!todayRecord) {
+        // Fix 2: re-verify dari DB (bukan state). Cegah insert duplikat jika insert
+        //         pertama ternyata berhasil tapi response-nya hilang (network blip).
+        const today = new Date().toLocaleDateString('en-CA')
+        const { data: existingToday } = await supabase
+          .from('attendance')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('check_in_time', `${today}T00:00:00`)
+          .lte('check_in_time', `${today}T23:59:59`)
+          .order('check_in_time', { ascending: true })
+          .limit(1)
+          .maybeSingle()
 
-      const { data, error } = await supabase
-        .from('attendance')
-        .insert([{
-          user_id: user.id,
-          check_in_time: new Date().toISOString(),
-          latitude: userLoc?.lat || 0,
-          longitude: userLoc?.lng || 0,
-          status: finalStatus
-        }])
-        .select().single()
+        if (existingToday) {
+          // Insert pertama sukses tanpa disadari → pakai record itu, jangan insert lagi.
+          setTodayRecord(existingToday)
+          setHistory([existingToday, ...history].slice(0, 5))
+          toast.info('Anda sudah melakukan presensi masuk hari ini.')
+          return
+        }
 
-      if (!error) {
-        setTodayRecord(data)
-        setHistory([data, ...history].slice(0, 5))
-        toast.success(`Presensi masuk berhasil pada pukul ${jamMenitSekarang}. Selamat bertugas.`)
+        const isTerlambat = jamMenitSekarang > JAM_MASUK_DEADLINE
+        let finalStatus = isTerlambat ? 'Terlambat' : 'Hadir'
+        if (isJumat) finalStatus = isTerlambat ? 'Terlambat (WFH)' : 'Hadir (WFH)'
+
+        const { data, error } = await supabase
+          .from('attendance')
+          .insert([{
+            user_id: user.id,
+            check_in_time: new Date().toISOString(),
+            latitude: userLoc?.lat || 0,
+            longitude: userLoc?.lng || 0,
+            status: finalStatus
+          }])
+          .select().single()
+
+        if (!error) {
+          setTodayRecord(data)
+          setHistory([data, ...history].slice(0, 5))
+          toast.success(`Presensi masuk berhasil pada pukul ${jamMenitSekarang}. Selamat bertugas.`)
+        } else {
+          console.error(error)
+          toast.error("Gagal melakukan presensi masuk.")
+        }
       } else {
-        console.error(error)
-        toast.error("Gagal melakukan presensi masuk.")
-      }
-    } else {
-      const { data, error } = await supabase
-        .from('attendance')
-        .update({
-          check_out_time: sekarang.toISOString(),
-          lat_out: userLoc?.lat || 0,
-          lng_out: userLoc?.lng || 0
-        })
-        .eq('id', todayRecord.id)
-        .select().single()
+        const { data, error } = await supabase
+          .from('attendance')
+          .update({
+            check_out_time: sekarang.toISOString(),
+            lat_out: userLoc?.lat || 0,
+            lng_out: userLoc?.lng || 0
+          })
+          .eq('id', todayRecord.id)
+          .select().single()
 
-      if (!error) {
-        setTodayRecord(data)
-        setHistory(history.map(h => h.id === data.id ? data : h))
-        toast.success(`Presensi pulang berhasil pada pukul ${jamMenitSekarang}. Hati-hati di jalan.`)
-      } else {
-        console.error("Detail Error:", error)
-        toast.error("Gagal melakukan presensi pulang.")
+        if (!error) {
+          setTodayRecord(data)
+          setHistory(history.map(h => h.id === data.id ? data : h))
+          toast.success(`Presensi pulang berhasil pada pukul ${jamMenitSekarang}. Hati-hati di jalan.`)
+        } else {
+          console.error("Detail Error:", error)
+          toast.error("Gagal melakukan presensi pulang.")
+        }
       }
+    } finally {
+      submittingRef.current = false
+      setIsSubmitting(false)
     }
-    setIsSubmitting(false)
   }
 
   const formatTime = (isoString: string) => {
@@ -340,24 +415,98 @@ export default function AbsenPage() {
             {/* KOLOM KANAN: STATUS ABSEN & RIWAYAT */}
             <div className="w-full lg:w-[380px] flex flex-col gap-6">
 
-              {/* KOTAK STATUS & TOMBOL ABSEN */}
+              {/* KOTAK TANGGAL & JAM */}
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6 relative overflow-hidden shrink-0">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-10 opacity-50"></div>
 
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Validasi Kehadiran</h3>
+                <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Tanggal & Waktu
+                </h3>
 
-                <div className="bg-[#f8fafc] rounded-2xl p-5 text-center mb-5 border border-slate-100">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-[#f8fafc] border border-slate-100">
+                    <div className="min-w-0">
+                      <p className="text-xs text-slate-400 font-medium">Hari ini</p>
+                      <p className="text-sm font-bold text-slate-800">{tanggalStr}</p>
+                    </div>
+                    <span className={`shrink-0 px-3 py-1 text-xs font-bold rounded-full ${statusHariColor}`}>
+                      {statusHariLabel}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#f8fafc] border border-slate-100 text-center">
+                    <p className="text-xs text-slate-400 font-medium mb-1">Waktu Sekarang</p>
+                    <p className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight tabular-nums">{currentTime}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* KOTAK JADWAL PRESENSI HARI INI */}
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6 relative overflow-hidden shrink-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-10 opacity-50"></div>
+
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Jadwal Presensi Hari Ini</h3>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {/* KARTU KECIL: ABSEN MASUK */}
+                  <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 flex flex-col shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-white text-blue-600 flex items-center justify-center shadow-sm">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-800 leading-tight">Jam Masuk</p>
+                        <p className="text-[11px] text-slate-500 leading-tight">{JAM_MASUK_START} - {JAM_MASUK_DEADLINE}</p>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Absen Anda</p>
+                      <p className="text-lg font-black text-slate-800 tabular-nums leading-none">
+                        {todayRecord?.check_in_time ? formatTime(todayRecord.check_in_time) : '—'}
+                      </p>
+                    </div>
+                    <span className={`mt-auto w-full text-center px-2.5 py-1 text-[11px] font-bold rounded-full ${masukStatusColor}`}>
+                      {masukStatus}
+                    </span>
+                  </div>
+
+                  {/* KARTU KECIL: ABSEN PULANG */}
+                  <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100 p-3.5 flex flex-col shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-white text-emerald-600 flex items-center justify-center shadow-sm">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-800 leading-tight">Jam Pulang</p>
+                        <p className="text-[11px] text-slate-500 leading-tight">{JAM_PULANG_START} - {JAM_PULANG_END}</p>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Absen Anda</p>
+                      <p className="text-lg font-black text-slate-800 tabular-nums leading-none">
+                        {todayRecord?.check_out_time ? formatTime(todayRecord.check_out_time) : '—'}
+                      </p>
+                    </div>
+                    <span className={`mt-auto w-full text-center px-2.5 py-1 text-[11px] font-bold rounded-full ${pulangStatusColor}`}>
+                      {pulangStatus}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Info jarak GPS / WFH */}
+                <div className="bg-[#f8fafc] rounded-2xl p-4 text-center mb-4 border border-slate-100">
                   {isJumat ? (
                     <>
-                      <p className="text-2xl md:text-3xl font-black text-blue-600 tracking-tight mb-2">Mode WFH Aktif</p>
-                      <p className="text-sm font-semibold text-slate-500">
+                      <p className="text-2xl font-black text-blue-600 tracking-tight mb-1">Mode WFH Aktif</p>
+                      <p className="text-xs font-semibold text-slate-500">
                         Hari Jumat bebas presensi dari mana saja.
                       </p>
                     </>
                   ) : distance !== null ? (
                     <>
-                      <p className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">{distance} <span className="text-lg md:text-xl font-medium text-slate-500">m</span></p>
-                      <p className={`text-sm font-semibold mt-2 ${distance <= MAX_RADIUS_METERS ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      <p className="text-3xl font-black text-slate-800 tracking-tight">{distance} <span className="text-lg font-medium text-slate-500">m</span></p>
+                      <p className={`text-sm font-semibold mt-1 ${distance <= MAX_RADIUS_METERS ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {distance <= MAX_RADIUS_METERS ? 'Berada di Dalam Jangkauan' : 'Di Luar Radius Kantor'}
                       </p>
                     </>
@@ -402,7 +551,7 @@ export default function AbsenPage() {
               {/* KOTAK RIWAYAT ABSEN */}
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6 flex-1 overflow-hidden flex flex-col min-h-[300px]">
                 <div className="flex justify-between items-center mb-4 md:mb-6 shrink-0">
-                  <h3 className="text-lg font-bold text-slate-800">Riwarat Terakhir</h3>
+                  <h3 className="text-lg font-bold text-slate-800">Riwayat Terakhir</h3>
                   <button onClick={() => router.push('/ojt/absen/history')} className="ml-auto text-sm text-indigo-600 hover:underline">Lihat Semua Riwayat</button>
                 </div>
 

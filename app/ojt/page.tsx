@@ -10,6 +10,7 @@ export default function BerandaOJT() {
   const [profile, setProfile] = useState<any>(null)
   const [mentorName, setMentorName] = useState<string>('Memuat...')
   const [loading, setLoading] = useState(true)
+  const [todayRecord, setTodayRecord] = useState<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -48,6 +49,18 @@ export default function BerandaOJT() {
           setMentorName('Belum Ditugaskan')
         }
       }
+
+      // 3. Tarik Data Absen Hari Ini untuk kartu shortcut presensi
+      const today = new Date().toLocaleDateString('en-CA')
+      const { data: todayAttendance } = await supabase
+        .from('attendance')
+        .select('check_in_time, check_out_time, status')
+        .eq('user_id', user.id)
+        .gte('check_in_time', `${today}T00:00:00`)
+        .lte('check_in_time', `${today}T23:59:59`)
+        .maybeSingle()
+      if (todayAttendance) setTodayRecord(todayAttendance)
+
       setLoading(false)
     }
 
@@ -64,6 +77,11 @@ export default function BerandaOJT() {
     const diffTime = end.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays > 0 ? diffDays : 0
+  }
+
+  // Format waktu HH:MM untuk kartu shortcut presensi
+  const formatTime = (isoString: string) => {
+    return new Date(isoString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
   }
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff]">Memuat Dasbor Peserta...</div>
@@ -138,12 +156,12 @@ export default function BerandaOJT() {
         <div className="flex-1 overflow-y-auto pb-24 md:pb-8">
           
           {/* HEADER & PROFILE SECTION */}
-          <div className="bg-[#1e1b4b] pt-8 md:pt-10 pb-20 px-6 md:px-10 rounded-b-[40px] md:rounded-b-none md:mx-6 md:mt-6 md:rounded-3xl shadow-lg relative overflow-hidden">
+          <div className="bg-[#1e1b4b] pt-5 md:pt-8 pb-12 md:pb-16 px-6 md:px-10 rounded-b-[40px] md:rounded-b-none md:mx-6 md:mt-6 md:rounded-3xl shadow-lg relative overflow-hidden">
             {/* Dekorasi Background */}
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
             <div className="absolute -left-10 bottom-0 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
 
-            <div className="relative z-10 flex items-center justify-between mb-8">
+            <div className="relative z-10 flex items-center justify-between mb-4 md:mb-6">
               <div className="flex items-center gap-3">
                 {/* Logo MDU Khusus Mobile di Header */}
                 <div className="md:hidden bg-white p-1 rounded-xl">
@@ -151,7 +169,7 @@ export default function BerandaOJT() {
                 </div>
                 <div>
                   <h2 className="text-blue-200 text-sm md:text-base font-medium tracking-wide">Selamat Datang,</h2>
-                  <h1 className="text-white text-2xl md:text-3xl font-bold tracking-tight">{profile?.name}</h1>
+                  <h1 className="text-white text-xl md:text-3xl font-bold tracking-tight">{profile?.name}</h1>
                 </div>
               </div>
               <button onClick={() => router.push('/settings')} className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md hidden md:flex items-center justify-center border border-white/20 hover:bg-white/20 transition-all cursor-pointer">
@@ -160,14 +178,14 @@ export default function BerandaOJT() {
             </div>
 
             {/* KARTU IDENTITAS DIGITAL */}
-            <div className="bg-white rounded-3xl p-6 shadow-xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-              <div className="w-20 h-20 shrink-0 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-inner overflow-hidden border-4 border-slate-50">
+            <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-14 h-14 md:w-20 md:h-20 shrink-0 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-inner overflow-hidden border-2 border-slate-50">
                 {profile?.avatar_url ? (
                     <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Foto Profil" />
                 ) : profile?.name?.charAt(0)}
               </div>
               <div className="flex-1">
-                <p className="text-[#1e1b4b] font-black text-xl md:text-2xl leading-tight">{profile?.nip || 'Belum Ada NIP'}</p>
+                <p className="text-[#1e1b4b] font-black text-base md:text-2xl leading-tight">{profile?.nip || 'Belum Ada NIP'}</p>
                 <p className="text-slate-500 text-sm md:text-base font-bold uppercase tracking-wider mt-1">{profile?.divisi}</p>
                 <div className="flex flex-wrap items-center gap-2 mt-2.5">
                   <span className="px-3 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[10px] md:text-xs font-black border border-emerald-100 uppercase tracking-wide">
@@ -185,8 +203,8 @@ export default function BerandaOJT() {
           </div>
 
           {/* INFORMASI PENUGASAN */}
-          <div className="px-6 md:px-10 -mt-8 relative z-20">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-4 md:p-5 text-white shadow-lg flex items-center justify-between">
+          <div className="px-6 md:px-10 -mt-6 relative z-20">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-3 md:p-5 text-white shadow-lg flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 p-2 md:p-3 rounded-lg md:rounded-xl">
                   <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -200,6 +218,61 @@ export default function BerandaOJT() {
                 <p className="text-[10px] md:text-xs uppercase font-bold text-blue-100 leading-none mb-1">Mentor Pembimbing</p>
                 <p className="text-sm md:text-base font-bold leading-none">{mentorName}</p>
               </div>
+            </div>
+          </div>
+
+          {/* KARTU SHORTCUT PRESENSI HARI INI */}
+          <div className="px-6 md:px-10 mt-6">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 md:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </div>
+                  <h3 className="text-base md:text-lg font-bold text-slate-800">Presensi Hari Ini</h3>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[11px] md:text-xs font-bold border border-blue-100">
+                  {profile?.asal_kantor || 'MDU'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {/* Mini card: Masuk */}
+                <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-white text-blue-600 flex items-center justify-center shadow-sm">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">Masuk</p>
+                  </div>
+                  <p className="text-lg font-black text-slate-800 tabular-nums leading-none mb-1">
+                    {todayRecord?.check_in_time ? formatTime(todayRecord.check_in_time) : 'Belum Absen'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-medium">Range: 07:00 - 08:00</p>
+                </div>
+
+                {/* Mini card: Pulang */}
+                <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100 p-3.5 flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-white text-emerald-600 flex items-center justify-center shadow-sm">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">Pulang</p>
+                  </div>
+                  <p className="text-lg font-black text-slate-800 tabular-nums leading-none mb-1">
+                    {todayRecord?.check_out_time ? formatTime(todayRecord.check_out_time) : 'Belum Pulang'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-medium">Range: 15:00 - 16:00</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => router.push('/ojt/absen')}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 hover:border-blue-300 hover:from-blue-100 hover:to-emerald-100 text-slate-700 font-bold py-3.5 rounded-xl transition-all text-sm md:text-base group"
+              >
+                Buka Menu Presensi
+                <svg className="w-5 h-5 text-emerald-600 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </button>
             </div>
           </div>
 

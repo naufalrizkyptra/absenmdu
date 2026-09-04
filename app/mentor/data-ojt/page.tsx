@@ -619,6 +619,7 @@ export default function DataOJTPage() {
                   <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Divisi</label>
                   <select value={formData.divisi} onChange={(e) => setFormData({...formData, divisi: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer">
                     <option value="Multimedia">Multimedia</option>
+                    <option value="Animator">Animator</option>
                     <option value="Humas">Humas</option>
                     <option value="LPPM">LPPM</option>
                     <option value="Content Creator">Content Creator</option>
@@ -710,6 +711,7 @@ export default function DataOJTPage() {
                   <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Divisi</label>
                   <select value={editingUser.divisi} onChange={(e) => setEditingUser({...editingUser, divisi: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer">
                     <option value="Multimedia">Multimedia</option>
+                    <option value="Animator">Animator</option>
                     <option value="Humas">Humas</option>
                     <option value="LPPM">LPPM</option>
                     <option value="Content Creator">Content Creator</option>

@@ -8,12 +8,57 @@ import { Toaster, toast } from 'sonner'
 export default function BerandaOJT() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
-  const [mentorName, setMentorName] = useState<string>('Memuat...')
+  const [mentorName, setMentorName] = useState<string>('Memults...')
   const [loading, setLoading] = useState(true)
   const [todayRecord, setTodayRecord] = useState<any>(null)
+  const [showWfhModal, setShowWfhModal] = useState(false)
+  const [isInFirstWeekWindow, setIsInFirstWeekWindow] = useState<boolean | null>(null)
   const router = useRouter()
 
   useEffect(() => {
+    const checkModalNeedsToShow = () => {
+      // Check localStorage for dismissal history
+      const dismissed = localStorage.getItem('wfh_modal_dismissed')
+      const timestamp = localStorage.getItem('wfh_modal_timestamp')
+      
+      // If no dismissal ever, always show
+      if (!dismissed) {
+        setIsInFirstWeekWindow(true)
+        return true
+      }
+      
+      // Calculate days since last dismissal
+      if (timestamp) {
+        const lastDismissedTime = parseInt(timestamp)
+        const currentTime = Date.now()
+        const daysSinceDismissal = Math.floor(
+          (currentTime - lastDismissedTime) / (1000 * 60 * 60 * 24)
+        )
+        
+        // Show if still within first 7 days
+        if (daysSinceDismissal < 7) {
+          setIsInFirstWeekWindow(true)
+          return true
+        } else {
+          // More than 7 days passed, permanent dismissal
+          setIsInFirstWeekWindow(false)
+          return false
+        }
+      }
+      
+      setIsInFirstWeekWindow(false)
+      return false
+    }
+    
+    const shouldShowModal = checkModalNeedsToShow()
+    
+    // Only set showModal to true initially, don't auto-show
+    if (shouldShowModal) {
+      setShowWfhModal(true)
+    } else {
+      setShowWfhModal(false)
+    }
+
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -84,12 +129,99 @@ export default function BerandaOJT() {
     return new Date(isoString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
   }
 
+  // Handler for dismissing modal
+  const handleCloseModal = () => {
+    setShowWfhModal(false)
+    
+    // Save dismissal info to localStorage
+    localStorage.setItem('wfh_modal_dismissed', 'true')
+    localStorage.setItem('wfh_modal_timestamp', Date.now().toString())
+  }
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff]">Memuat Dasbor Peserta...</div>
 
   return (
     <div className="min-h-[100dvh] bg-[#f8faff] flex flex-col md:flex-row font-sans">
       <Toaster position="top-center" richColors />
       
+      {/* MODAL POPUP NOTIFIKASI WFH - Muncul saat pertama kali login */}
+      {showWfhModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto animate-in fade-in duration-300">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            {/* Backdrop overlay dengan blur effect yang kuat */}
+            <div 
+              className="fixed inset-0 transition-all duration-300 bg-slate-900/80 backdrop-blur-xl"
+              onClick={handleCloseModal}
+            ></div>
+
+            {/* Modal panel dengan backdrop blur sendiri */}
+            <div className="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white/95 backdrop-blur-xl shadow-2xl rounded-3xl border border-amber-200 animate-in zoom-in-95 duration-300">
+              {/* Header dengan ikon */}
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100">
+                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+
+              {/* Judul Modal */}
+              <h3 className="text-xl font-bold text-slate-800 mb-3 text-center">
+                📢 Pemberitahuan Penting Perubahan Kebijakan Presensi
+              </h3>
+
+              {/* Isi Modal */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-2xl border-2 border-amber-200 mb-6">
+                <p className="text-sm text-amber-900 leading-relaxed mb-3">
+                  Diberitahukan kepada seluruh peserta OJT, mulai tanggal <span className="font-black text-amber-700">1 September 2026</span>, 
+                  sistem <span className="font-black text-amber-700 underline decoration-amber-500">Work From Home (WFH) telah dihentikan</span>.
+                </p>
+                <p className="text-sm text-amber-900 leading-relaxed">
+                  Mohon untuk <strong className="text-amber-700">hadir secara fisik</strong> ke kantor cabang masing-masing pada hari kerja. 
+                  Silakan perhatikan ketentuan absensi yang berlaku sekarang.
+                </p>
+              </div>
+
+              {/* Detail Informasi */}
+              <div className="mb-6 space-y-2">
+                <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Efektif Tanggal</p>
+                    <p className="text-sm font-bold text-emerald-700">1 September 2026</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Kebijakan Baru</p>
+                    <p className="text-sm font-bold text-blue-700">Hadir Fisik ke Kantor</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tombol Close Modal */}
+              <div className="flex flex-col gap-3 sm:flex-col">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  Saya Mengerti, Terima Kasih!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* =========================================
           1. SIDEBAR (KHUSUS DESKTOP) 
           ========================================= */}
@@ -327,26 +459,66 @@ export default function BerandaOJT() {
             </div>
           </div>
 
-          {/* PENGUMUMAN / INFO TERBARU */}
-          <div className="px-6 md:px-10 mt-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-slate-800 font-bold text-lg">Pusat Informasi</h3>
-            </div>
-            <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                   <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                </div>
-                <div>
-                  <h4 className="text-sm md:text-base font-bold text-slate-800">Petunjuk Teknis Pengumpulan Tugas</h4>
-                  <p className="text-xs md:text-sm text-slate-500 mt-1 leading-relaxed">Pastikan Anda menggunakan tautan Google Drive dengan akses publik (Anyone with the link) untuk melampirkan bukti foto kolase tugas harian Anda.</p>
-                  <p className="text-[10px] md:text-xs text-blue-500 mt-2.5 font-bold uppercase tracking-widest">Terbit: Hari Ini</p>
-                </div>
-              </div>
-            </div>
-          </div>
+           {/* PENGUMUMAN / INFO TERBARU */}
+           <div className="px-6 md:px-10 mt-8">
+             <div className="flex items-center justify-between mb-4">
+               <h3 className="text-slate-800 font-bold text-lg">Pusat Informasi</h3>
+             </div>
+             <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+               <div className="flex items-start gap-4">
+                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                 </div>
+                 <div>
+                   <h4 className="text-sm md:text-base font-bold text-slate-800">Petunjuk Teknis Pengumpulan Tugas</h4>
+                   <p className="text-xs md:text-sm text-slate-500 mt-1 leading-relaxed">Pastikan Anda menggunakan tautan Google Drive dengan akses publik (Anyone with the link) untuk melampirkan bukti foto kolase tugas harian Anda.</p>
+                   <p className="text-[10px] md:text-xs text-blue-500 mt-2.5 font-bold uppercase tracking-widest">Terbit: Hari Ini</p>
+                 </div>
+               </div>
+             </div>
+           </div>
 
-          {/* FOOTER LOGOUT (MOBILE ONLY) */}
+           {/* NOTIFIKASI WFH DITINGGALKAN - EFEKTIF 1 SEPTEMBER 2026 */}
+           <div className="px-6 md:px-10 mt-8">
+             <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-5 md:p-6 rounded-3xl border-2 border-amber-200 shadow-md hover:shadow-lg transition-shadow relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full blur-2xl"></div>
+               <div className="relative z-10">
+                 <div className="flex items-start gap-4">
+                   <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 animate-pulse-slow">
+                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                     </svg>
+                   </div>
+                   <div className="flex-1">
+                     <h4 className="text-base md:text-lg font-bold text-amber-900 mb-2">
+                       📢 Pemberitahuan Penting: Perubahan Kebijakan Presensi
+                     </h4>
+                     <p className="text-sm text-amber-800 leading-relaxed mb-3">
+                       Diberitahukan kepada seluruh peserta OJT, mulai tanggal <strong className="text-amber-700">1 September 2026</strong>, 
+                       sistem <span className="font-black text-amber-700 underline decoration-amber-500">Work From Home (WFH) telah dihentikan</span>. 
+                       Mohon untuk <strong className="text-amber-700">hadir secara fisik</strong> ke kantor cabang masing-masing pada hari kerja.
+                     </p>
+                     <div className="flex flex-wrap items-center gap-3 text-xs">
+                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-200 text-amber-800 rounded-full font-semibold">
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                         </svg>
+                         Efektif: 1 Sept 2026
+                       </span>
+                       <span className="text-amber-600 font-medium flex items-center gap-1">
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                         Selalu patuhi aturan perusahaan
+                       </span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+           {/* FOOTER LOGOUT (MOBILE ONLY) */}
           <div className="px-6 mt-8 md:hidden">
              <button 
                onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}

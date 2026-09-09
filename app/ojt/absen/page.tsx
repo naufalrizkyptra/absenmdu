@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
-import { LoadingMDU } from '../components/LoadingMDU/index'
+import { LoadingMDU } from '@/components/LoadingMDU'
 
 // --- KORDINAT KANTOR MDU ---
 const LOKASI_CABANG: Record<string, { lat: number, lng: number }> = {

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { LoadingMDU } from '@/components/LoadingMDU'
 
 // --- KORDINAT KANTOR MDU ---
 const LOKASI_CABANG: Record<string, { lat: number, lng: number }> = {
@@ -86,14 +87,21 @@ export default function AbsenPage() {
       setIsCheckingRole(false)
       if (userProfile) setProfile(userProfile)
 
-      const today = new Date().toLocaleDateString('en-CA')
+      // Use timezone-safe date boundaries (Indonesia UTC+7)
+      const now = new Date()
+      const todayStart = new Date(now.getTime())
+      todayStart.setHours(0, 0, 0, 0)
+      
+      const tomorrowStart = new Date(todayStart)
+      tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
       const { data: todayData, error: todayErr } = await supabase
         .from('attendance')
         .select('*')
         .eq('user_id', user.id)
-        .gte('check_in_time', `${today}T00:00:00`)
-        .lte('check_in_time', `${today}T23:59:59`)
-        .order('check_in_time', { ascending: true })
+        .gte('check_in_time', todayStart.toISOString())
+        .lt('check_in_time', tomorrowStart.toISOString())
+        .order('check_in_time', { ascending: false })
         .limit(1)
         .maybeSingle()
 
@@ -191,14 +199,21 @@ export default function AbsenPage() {
       if (!todayRecord) {
         // Fix 2: re-verify dari DB (bukan state). Cegah insert duplikat jika insert
         //         pertama ternyata berhasil tapi response-nya hilang (network blip).
-        const today = new Date().toLocaleDateString('en-CA')
+        // Use timezone-safe date boundaries for re-verification
+        const now = new Date()
+        const todayStart = new Date(now.getTime())
+        todayStart.setHours(0, 0, 0, 0)
+        
+        const tomorrowStart = new Date(todayStart)
+        tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
         const { data: existingToday } = await supabase
           .from('attendance')
           .select('*')
           .eq('user_id', user.id)
-          .gte('check_in_time', `${today}T00:00:00`)
-          .lte('check_in_time', `${today}T23:59:59`)
-          .order('check_in_time', { ascending: true })
+          .gte('check_in_time', todayStart.toISOString())
+          .lt('check_in_time', tomorrowStart.toISOString())
+          .order('check_in_time', { ascending: false })
           .limit(1)
           .maybeSingle()
 
@@ -236,17 +251,49 @@ export default function AbsenPage() {
         const { data, error } = await supabase
           .from('attendance')
           .update({
-            check_out_time: sekarang.toISOString(),
-            lat_out: userLoc?.lat || 0,
-            lng_out: userLoc?.lng || 0
+            id: todayRecord.id,                                    // Keep same ID
+            check_in_time: todayRecord.check_in_time,             // PRESERVE check-in!
+            check_out_time: sekarang.toISOString(),               // New checkout time
+            latitude: todayRecord.latitude,                        // PRESERVE check-in location!
+            longitude: todayRecord.longitude,                      // PRESERVE check-in location!
+            lat_out: userLoc?.lat || 0,                            // Checkout location
+            lng_out: userLoc?.lng || 0,                            // Checkout location  
+            status: todayRecord.status                             // PRESERVE status!
           })
           .eq('id', todayRecord.id)
           .select().single()
 
         if (!error) {
-          setTodayRecord(data)
-          setHistory(history.map(h => h.id === data.id ? data : h))
-          toast.success(`Presensi pulang berhasil pada pukul ${jamMenitSekarang}. Hati-hati di jalan.`)
+          // Force refresh from database to ensure data consistency
+          const { data: refreshedData, error: refreshError } = await supabase
+            .from('attendance')
+            .select('*')
+            .eq('id', todayRecord.id)
+            .single()
+          
+          if (!refreshError && refreshedData) {
+            // Use fresh data from DB
+            setTodayRecord(refreshedData)
+            
+            // Also refresh history to keep it in sync
+            const { data: historyData } = await supabase
+              .from('attendance')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('check_in_time', { ascending: false })
+              .limit(5)
+            
+            if (historyData) {
+              setHistory(historyData)
+            }
+            
+            toast.success(`Presensi pulang berhasil pada pukul ${jamMenitSekarang}. Hati-hati di jalan.`)
+          } else {
+            // Fallback: use update response if force refresh fails
+            setTodayRecord(data)
+            setHistory(history.map(h => h.id === data.id ? data : h))
+            toast.success(`Presensi pulang berhasil pada pukul ${jamMenitSekarang}. Hati-hati di jalan.`)
+          }
         } else {
           console.error("Detail Error:", error)
           toast.error("Gagal melakukan presensi pulang.")
@@ -267,14 +314,10 @@ export default function AbsenPage() {
   }
 
   if (isCheckingRole) {
-    return (
-      <div className="min-h-screen bg-[#f8faff] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1e1b4b]"></div>
-      </div>
-    )
+    return <LoadingMDU message="Memuat profil..." />
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff]">Memuat Data Presensi...</div>
+  if (loading) return <LoadingMDU message="Memuat Data Presensi..." />
   if (!user) return null
 
   return (

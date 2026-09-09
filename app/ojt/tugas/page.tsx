@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { LoadingMDU } from '@/components/LoadingMDU'
+
 
 export default function TugasBoostPage() {
   const [user, setUser] = useState<any>(null)
@@ -94,7 +96,7 @@ export default function TugasBoostPage() {
     return new Date(isoString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-indigo-950 font-medium">Memuat Modul Tugas...</div>
+  if (loading) return <LoadingMDU message="Memuat Modul Tugas..." />
 
   return (
     <div className="min-h-screen bg-[#f8faff] font-sans flex">

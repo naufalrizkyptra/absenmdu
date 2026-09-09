@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { LoadingMDU } from '@/components/LoadingMDU'
+
 
 // --- KORDINAT KANTOR MDU ---
 const LOKASI_CABANG: Record<string, { lat: number, lng: number }> = {
@@ -203,7 +205,7 @@ export default function AbsenPage() {
     )
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff]">Memuat Data Presensi...</div>
+  if (loading) return <LoadingMDU message="Memuat Data Presensi..." />
   if (!user) return null
 
   return (

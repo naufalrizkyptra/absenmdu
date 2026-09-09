@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
+import { LoadingMDU } from '@/components/LoadingMDU'
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null)
@@ -70,7 +71,7 @@ export default function AdminDashboard() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff] font-bold">Memuat Dashboard CBO...</div>
+  if (loading) return <LoadingMDU message="Memuat Dashboard..." />
   if (!user) return null
 
   return (

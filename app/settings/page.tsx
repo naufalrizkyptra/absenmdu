@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
+import { LoadingMDU } from '@/components/LoadingMDU'
 
 // Kumpulan Avatar yang udah lu kurasi
 const AVATAR_OPTIONS = [
@@ -60,7 +61,7 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center">Memuat...</div>
+  if (loading) return <LoadingMDU message="Memuat pengaturan..." />
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">

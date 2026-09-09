@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Toaster } from 'sonner'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
+import { LoadingMDU } from '@/components/LoadingMDU'
 
 export default function MentorDashboard() {
   const [user, setUser] = useState<any>(null)
@@ -30,7 +31,12 @@ export default function MentorDashboard() {
       const { data: mentorProfile } = await supabase.from('users').select('name, avatar_url, divisi').eq('id', user.id).single()
       if (mentorProfile) setProfile(mentorProfile)
 
-      const { data: teamData } = await supabase.from('users').select('*').eq('mentor_id', user.id).eq('role', 'ojt')
+      const { data: teamData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('mentor_id', user.id)
+        .eq('role', 'ojt')
+        .eq('status_ojt', 'aktif') // Filter only active participants, exclude archived
       if (teamData) setMentees(teamData)
       
       setLoading(false)
@@ -108,7 +114,7 @@ export default function MentorDashboard() {
   const formatTime = (isoString: string) => new Date(isoString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
   const getFormattedDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-indigo-950 font-medium">Memuat Panel Mentor...</div>
+  if (loading) return <LoadingMDU message="Memuat Panel Mentor..." />
   if (!user) return null
 
   return (
@@ -144,13 +150,13 @@ export default function MentorDashboard() {
 
             {/* Menu Items */}
             <div className="px-4 flex-1 mt-4 space-y-2 overflow-y-auto">
-              <button 
-                onClick={() => { setMobileMenuOpen(false); router.push('/mentor'); }}
-                className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20 text-left"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                <span className="font-semibold text-sm">Ikhtisar Tim</span>
-              </button>
+                <button 
+                  onClick={() => { setMobileMenuOpen(false); router.push('/mentor'); }}
+                  className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20 text-left"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                  <span className="font-semibold text-sm">Pantuan Tim</span>
+                </button>
               <button 
                 onClick={() => { setMobileMenuOpen(false); router.push('/mentor/data-ojt'); }}
                 className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-left"
@@ -224,7 +230,7 @@ export default function MentorDashboard() {
         <div className="px-4 flex-1 mt-4 space-y-2">
           <button className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            <span className="font-semibold text-sm">Ikhtisar Tim</span>
+            <span className="font-semibold text-sm">Pantuan Tim</span>
           </button>
           <button onClick={() => router.push('/mentor/data-ojt')} className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>

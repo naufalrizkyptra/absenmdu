@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { LoadingMDU } from '@/components/LoadingMDU'
+
 
 export default function IzinPage() {
   const [user, setUser] = useState<any>(null)
@@ -163,7 +165,7 @@ export default function IzinPage() {
     return new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-indigo-950 font-medium">Memuat Data...</div>
+  if (loading) return <LoadingMDU message="Memuat Data..." />
 
   return (
     <div className="min-h-screen bg-[#f8faff] font-sans flex">

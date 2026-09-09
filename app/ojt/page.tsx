@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { LoadingMDU } from '@/components/LoadingMDU'
 
 export default function BerandaOJT() {
   const [user, setUser] = useState<any>(null)
@@ -138,7 +139,7 @@ export default function BerandaOJT() {
     localStorage.setItem('wfh_modal_timestamp', Date.now().toString())
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff]">Memuat Dasbor Peserta...</div>
+  if (loading) return <LoadingMDU message="Memuat Dasbor Peserta..." />
 
   return (
     <div className="min-h-[100dvh] bg-[#f8faff] flex flex-col md:flex-row font-sans">

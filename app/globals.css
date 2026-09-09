@@ -24,3 +24,128 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ============================================
+   Custom Loading Animations for MDU Portal
+   ============================================ */
+
+/* Spin Animation - Rotasi smooth untuk logo */
+@keyframes spin-logo {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse Glow Ring Effect - Efek glowing berdenyut mengelilingi logo */
+@keyframes pulse-glow-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px 10px rgba(79, 70, 229, 0.3);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    opacity: 0.7;
+  }
+}
+
+/* Multi-ring Glow Effect - Multiple rings dengan delay berbeda */
+@keyframes multi-ring-pulse {
+  0%, 100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.5;
+  }
+}
+
+/* Fade In Text - Fade-in halus untuk teks dengan slide up */
+@keyframes fade-in-text {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    letter-spacing: -0.05em;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: normal;
+  }
+}
+
+/* Bounce Slight - Efek bounce organic saat pertama load */
+@keyframes bounce-slight {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Stagger Fade In - Variasi fade-in dengan delay berbeda */
+@keyframes stagger-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   Utility Animation Classes
+   ============================================ */
+
+.animate-spin-logo {
+  animation: spin-logo 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-pulse-glow-ring {
+  animation: pulse-glow-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-multi-ring-1 {
+  animation: multi-ring-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite 0s;
+}
+
+.animate-multi-ring-2 {
+  animation: multi-ring-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.4s;
+}
+
+.animate-multi-ring-3 {
+  animation: multi-ring-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.8s;
+}
+
+.animate-fade-text {
+  animation: fade-in-text 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-bounce-slight {
+  animation: bounce-slight 1s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+
+.animate-stagger-in {
+  animation: stagger-fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}

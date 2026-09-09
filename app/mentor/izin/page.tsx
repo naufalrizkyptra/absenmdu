@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { LoadingMDU } from '@/components/LoadingMDU'
+
 
 export default function VerifikasiIzinPage() {
   const [user, setUser] = useState<any>(null)
@@ -137,7 +139,7 @@ export default function VerifikasiIzinPage() {
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
   const filteredIzin = izinData.filter(t => t.status === filterStatus)
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff] font-bold text-indigo-900">Memuat Panel Verifikasi Izin...</div>
+  if (loading) return <LoadingMDU message="Memuat Panel Verifikasi Izin..." />
 
   return (
     <div className="min-h-screen bg-[#f8faff] font-sans flex">

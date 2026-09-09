@@ -11,6 +11,8 @@ import {
 import { Toaster, toast } from 'sonner'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { LoadingMDU } from '@/components/LoadingMDU'
+
 
 export default function PenilaianPage() {
   const [user, setUser] = useState<any>(null)
@@ -24,6 +26,10 @@ export default function PenilaianPage() {
   const [activeView, setActiveView] = useState<'list' | 'form'>('list')
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // NEW STATE UNTUK TABS & SEARCH
+  const [activeTab, setActiveTab] = useState<'belum-dinilai' | 'sudah-dinilai' | 'arsip'>('belum-dinilai')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // STATE UNTUK TEMPLATE PDF RAHASIA
   const [certData, setCertData] = useState<any>(null)
@@ -47,7 +53,13 @@ export default function PenilaianPage() {
     const { data: mentorProfile } = await supabase.from('users').select('name, avatar_url').eq('id', user.id).single()
     if (mentorProfile) setProfile(mentorProfile)
 
-    const { data: teamData } = await supabase.from('users').select('*').eq('mentor_id', user.id).eq('role', 'ojt')
+    // FILTER ACTIVE PARTICIPANTS ONLY
+    const { data: teamData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('mentor_id', user.id)
+      .eq('role', 'ojt')
+      .eq('status_ojt', 'aktif')
     if (teamData) setMentees(teamData)
 
     const { data: existingGrades } = await supabase.from('ojt_grades').select('*').eq('mentor_id', user.id)
@@ -202,7 +214,35 @@ export default function PenilaianPage() {
     }
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-indigo-950 font-medium">Memuat Modul Penilaian...</div>
+  // ==========================================
+  // LOGIC PENYARINGAN & SEARCH
+  // ==========================================
+  const getFilteredMentees = () => {
+    let filtered = mentees
+
+    // Apply tab filter
+    if (activeTab === 'belum-dinilai') {
+      filtered = filtered.filter(m => !gradesData.find(g => g.user_id === m.id))
+    } else if (activeTab === 'sudah-dinilai') {
+      filtered = filtered.filter(m => gradesData.find(g => g.user_id === m.id))
+    }
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter(m => 
+        m.name.toLowerCase().includes(query) ||
+        m.nip?.toLowerCase().includes(query) ||
+        m.divisi.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }
+
+  if (loading) return <LoadingMDU message="Memuat Modul Penilaian..." />
+
+  const filteredMentees = getFilteredMentees()
 
   return (
     <div className="min-h-screen bg-[#f8faff] font-sans flex">
@@ -242,7 +282,7 @@ export default function PenilaianPage() {
                 className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-left"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                <span className="font-semibold text-sm">Ikhtisar Tim</span>
+                <span className="font-semibold text-sm">Pantuan Tim</span>
               </button>
               <button
                 onClick={() => { setMobileMenuOpen(false); router.push('/mentor/data-ojt'); }}
@@ -315,7 +355,7 @@ export default function PenilaianPage() {
         <div className="px-4 flex-1 mt-4 space-y-2">
           <button onClick={() => router.push('/mentor')} className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            <span className="font-semibold text-sm">Ikhtisar Tim</span>
+            <span className="font-semibold text-sm">Pantuan Tim</span>
           </button>
           <button onClick={() => router.push('/mentor/data-ojt')} className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -386,61 +426,220 @@ export default function PenilaianPage() {
         {/* AREA KONTEN BAWAH (SCROLLABLE) */}
         <div className="flex-1 overflow-y-auto px-4 md:px-10 pb-10 -mt-12 relative z-10 custom-scrollbar">
 
-          {/* LAYAR 1: DAFTAR ANAK OJT */}
+          {/* LAYAR 1: DAFTAR ANAK OJT DENGAN TABS & SEARCH */}
           {activeView === 'list' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {mentees.map(m => {
-                const grade = gradesData.find(g => g.user_id === m.id)
-                let avg = 0, letter = '-'
-                if (grade) {
-                  const total = grade.q1_waktu + grade.q2_sikap + grade.q3_tanggung_jawab + grade.q4_kehadiran + grade.q5_kemampuan + grade.q6_keterampilan + grade.q7_kualitas + grade.q8_komunikasi + grade.q9_kerjasama + grade.q10_inisiatif + (grade.q11_percaya_diri || 0) + (grade.q12_patuh_aturan || 0) + (grade.q13_penampilan || 0)
-                  avg = total / 13
-                  letter = getLetterGrade(avg)
-                }
-
-                return (
-                  <div key={m.id} className="bg-white p-7 rounded-3xl border border-slate-100 shadow-xl flex flex-col relative overflow-hidden group hover:shadow-2xl hover:-translate-y-1 transition-all">
-                    {grade && <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-emerald-100 to-transparent rounded-bl-full -z-10 opacity-60"></div>}
-
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="pr-4">
-                        <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors">{m.name}</h3>
-                        <p className="text-xs text-slate-500 font-semibold mt-1">{m.nip || 'Belum Ada NIP'} • {m.divisi}</p>
+            <>
+              {/* HEADER SEARCH & FILTERS */}
+              <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
+                <div className="p-5 md:p-6 border-b border-slate-100">
+                  
+                  {/* SEARCH INPUT */}
+                  <div className="mb-4">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg className="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                       </div>
-                      {grade && (
-                        <div className="bg-emerald-50 text-emerald-600 border border-emerald-100 font-black text-xl w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner">
-                          {letter}
+                      <input
+                        type="text"
+                        placeholder="Cari nama, NIP, atau divisi..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 shadow-inner transition-all placeholder-slate-400 font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* TABS FILTER */}
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setActiveTab('belum-dinilai')}
+                      className={`px-4 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${
+                        activeTab === 'belum-dinilai' 
+                          ? 'bg-rose-50 text-rose-700 border-2 border-rose-200' 
+                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-2 border-transparent'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${activeTab === 'belum-dinilai' ? 'bg-rose-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                      Belum Dinilai ({mentees.filter(m => !gradesData.find(g => g.user_id === m.id)).length})
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('sudah-dinilai')}
+                      className={`px-4 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${
+                        activeTab === 'sudah-dinilai' 
+                          ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200' 
+                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-2 border-transparent'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${activeTab === 'sudah-dinilai' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                      Sudah Dinilai ({mentees.filter(m => gradesData.find(g => g.user_id === m.id)).length})
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('arsip')}
+                      className={`px-4 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${
+                        activeTab === 'arsip' 
+                          ? 'bg-amber-50 text-amber-700 border-2 border-amber-200' 
+                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-2 border-transparent'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                      Arsip Sertifikat
+                    </button>
+                  </div>
+                </div>
+
+                {/* CONTENT BASED ON TAB */}
+                {activeTab !== 'arsip' && (
+                  <>
+                    {/* STATS SUMMARY */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 border-b border-slate-100">
+                      <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100">
+                        <p className="text-rose-600 text-xs font-bold uppercase mb-1">Belum Dinilai</p>
+                        <p className="text-2xl font-black text-rose-700">{mentees.filter(m => !gradesData.find(g => g.user_id === m.id)).length}</p>
+                      </div>
+                      <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                        <p className="text-emerald-600 text-xs font-bold uppercase mb-1">Sudah Dinilai</p>
+                        <p className="text-2xl font-black text-emerald-700">{mentees.filter(m => gradesData.find(g => g.user_id === m.id)).length}</p>
+                      </div>
+                      <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                        <p className="text-indigo-600 text-xs font-bold uppercase mb-1">Total Tim</p>
+                        <p className="text-2xl font-black text-indigo-700">{mentees.length}</p>
+                      </div>
+                      <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                        <p className="text-amber-600 text-xs font-bold uppercase mb-1">Hasil Pencarian</p>
+                        <p className="text-2xl font-black text-amber-700">{filteredMentees.length}</p>
+                      </div>
+                    </div>
+
+                    {/* GRID STUDENT CARDS */}
+                    <div className="p-5 md:p-6">
+                      {filteredMentees.length === 0 ? (
+                        <div className="text-center py-16">
+                          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                          </div>
+                          <p className="text-base font-bold text-slate-600">Tidak Ada Data</p>
+                          <p className="text-sm text-slate-400 mt-1">
+                            {searchQuery 
+                              ? `Pencarian "${searchQuery}" tidak ditemukan.` 
+                              : activeTab === 'belum-dinilai' 
+                                ? 'Semua peserta sudah dinilai!' 
+                                : 'Belum ada peserta yang dinilai.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                          {filteredMentees.map(m => {
+                            const grade = gradesData.find(g => g.user_id === m.id)
+                            let avg = 0, letter = '-'
+                            if (grade) {
+                              const total = grade.q1_waktu + grade.q2_sikap + grade.q3_tanggung_jawab + grade.q4_kehadiran + grade.q5_kemampuan + grade.q6_keterampilan + grade.q7_kualitas + grade.q8_komunikasi + grade.q9_kerjasama + grade.q10_inisiatif + (grade.q11_percaya_diri || 0) + (grade.q12_patuh_aturan || 0) + (grade.q13_penampilan || 0)
+                              avg = total / 13
+                              letter = getLetterGrade(avg)
+                            }
+
+                            return (
+                              <div key={m.id} className={`bg-white p-7 rounded-3xl border-2 shadow-xl flex flex-col relative overflow-hidden group transition-all ${
+                                grade 
+                                  ? 'border-emerald-100 hover:shadow-2xl hover:-translate-y-1' 
+                                  : 'border-slate-100 hover:shadow-2xl hover:-translate-y-1'
+                              }`}>
+                                {grade && <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-emerald-100 to-transparent rounded-bl-full -z-10 opacity-60"></div>}
+
+                                <div className="flex justify-between items-start mb-6">
+                                  <div className="pr-4">
+                                    <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors">{m.name}</h3>
+                                    <p className="text-xs text-slate-500 font-semibold mt-1">{m.nip || 'Belum Ada NIP'} • {m.divisi}</p>
+                                  </div>
+                                  {grade && (
+                                    <div className="bg-emerald-50 text-emerald-600 border border-emerald-100 font-black text-xl w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner">
+                                      {letter}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="mt-auto pt-6 border-t border-slate-100/60 flex gap-3">
+                                  <button
+                                    onClick={() => openGradeForm(m)}
+                                    className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${grade
+                                      ? 'bg-slate-50 text-slate-600 border-2 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200'
+                                      : 'bg-indigo-600 text-white shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-indigo-500/50'
+                                      }`}
+                                  >
+                                    {grade ? 'Edit Rapor' : 'Beri Penilaian'}
+                                  </button>
+
+                                  {grade && (
+                                    <button
+                                      onClick={() => executeGeneratePDF(m.id, m.name)}
+                                      className="flex-1 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 hover:from-orange-600 hover:to-amber-600 hover:shadow-orange-500/50 transition-all"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                      Sertifikat
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                     </div>
+                  </>
+                )}
 
-                    <div className="mt-auto pt-6 border-t border-slate-100/60 flex gap-3">
-                      <button
-                        onClick={() => openGradeForm(m)}
-                        className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${grade
-                          ? 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200'
-                          : 'bg-indigo-600 text-white shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-indigo-500/50'
-                          }`}
-                      >
-                        {grade ? 'Edit Rapor' : 'Beri Penilaian'}
-                      </button>
-
-                      {grade && (
-                        <button
-                          onClick={() => executeGeneratePDF(m.id, m.name)}
-                          className="flex-1 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 hover:from-orange-600 hover:to-amber-600 hover:shadow-orange-500/50 transition-all"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          Sertifikat
-                        </button>
-                      )}
+                {/* ARSIP SERTIFIKAT VIEW */}
+                {activeTab === 'arsip' && (
+                  <div className="p-5 md:p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                          <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                          Arsip Sertifikat
+                        </h2>
+                        <p className="text-sm text-slate-500 mt-1">Daftar sertifikat yang telah diterbitkan</p>
+                      </div>
                     </div>
+
+                    {gradesData.length === 0 ? (
+                      <div className="text-center py-16">
+                        <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-300">
+                          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                        </div>
+                        <p className="text-base font-bold text-slate-600">Belum Ada Arsip</p>
+                        <p className="text-sm text-slate-400 mt-1">Sertifikat akan muncul di sini setelah diterbitkan.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {gradesData.map(grade => {
+                          const student = mentees.find(m => m.id === grade.user_id)
+                          if (!student) return null
+                          
+                          const total = grade.q1_waktu + grade.q2_sikap + grade.q3_tanggung_jawab + grade.q4_kehadiran + grade.q5_kemampuan + grade.q6_keterampilan + grade.q7_kualitas + grade.q8_komunikasi + grade.q9_kerjasama + grade.q10_inisiatif + (grade.q11_percaya_diri || 0) + (grade.q12_patuh_aturan || 0) + (grade.q13_penampilan || 0)
+                          const avg = total / 13
+                          const letter = getLetterGrade(avg)
+
+                          return (
+                            <div key={grade.id} className="bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-2xl border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-bold text-slate-800 text-base truncate">{student.name}</h3>
+                                  <p className="text-xs text-slate-500 font-semibold mt-0.5">{student.divisi}</p>
+                                </div>
+                                <div className="bg-amber-100 text-amber-700 border border-amber-200 font-black text-lg w-10 h-10 rounded-full flex items-center justify-center shrink-0">
+                                  {letter}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                )
-              })}
-            </div>
+                )}
+              </div>
+            </>
           )}
 
           {/* LAYAR 2: FORM PENILAIAN */}
@@ -558,140 +757,65 @@ export default function PenilaianPage() {
         </div>
       </main>
 
-      {/* =========================================================================
-          TEMPLATE RAHASIA UNTUK PDF (A4 LANDSCAPE: 1123px x 794px)
-          Diperbarui: Menggunakan warna HEX murni dan menghapus blur agar 100% 
-          kompatibel dengan html2canvas (Menghindari error "oklab").
-          ========================================================================= */}
+      {/* TEMPLATE PDF */}
       <div style={{ position: 'absolute', top: '-10000px', left: '-10000px', opacity: 0, pointerEvents: 'none' }}>
         {certData && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-
-            {/* HALAMAN 1: DESAIN DEPAN SERTIFIKAT */}
             <div id="cert-page-1" style={{ width: '794px', height: '1123px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-
-              <img src="/template-portrait-front.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: -1 }} alt="Sertifikat Background" crossOrigin="anonymous" />
-
-              {/* Nomor */}
-              <div style={{ position: 'absolute', top: '265px', left: 0, width: '100%', textAlign: 'center', zIndex: 10 }}>
+              <img src="/template-portrait-front.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: -1 }} alt="Background" crossOrigin="anonymous" />
+              <div style={{ position: 'absolute', top: '265px', left: 0, width: '100%', textAlign: 'center' }}>
                 <p style={{ fontSize: '1.25rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 'bold' }}>{certData.grades?.no_sertifikat || '___/MDU/___/____'}</p>
               </div>
-
-              {/* Nama Peserta */}
-              <div style={{ position: 'absolute', top: '400px', left: 0, width: '100%', textAlign: 'center', zIndex: 10 }}>
-                <h2 style={{ fontSize: '3.2rem', fontFamily: 'serif', fontStyle: 'italic', color: '#111827', margin: 0, letterSpacing: '0.02em' }}>{certData.student?.name}</h2>
+              <div style={{ position: 'absolute', top: '400px', left: 0, width: '100%', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '3.2rem', fontFamily: 'serif', fontStyle: 'italic', color: '#111827', margin: 0 }}>{certData.student?.name}</h2>
               </div>
-
-              {/* Divisi */}
-              <div style={{ position: 'absolute', top: '500px', left: 0, width: '100%', textAlign: 'center', zIndex: 10 }}>
+              <div style={{ position: 'absolute', top: '500px', left: 0, width: '100%', textAlign: 'center' }}>
                 <h3 style={{ fontSize: '1.6rem', fontFamily: 'sans-serif', fontWeight: 900, color: '#111827', margin: 0 }}>{certData.student?.divisi || 'Multimedia'}</h3>
               </div>
-
-              {/* Tanggal Magang */}
-              <div style={{ position: 'absolute', top: '600px', left: 0, width: '100%', textAlign: 'center', zIndex: 10 }}>
-                <p style={{ fontSize: '1.4rem', fontFamily: "'Glacial Indifference', sans-serif", color: '#111827', margin: 0, fontWeight: 500, lineHeight: '1.5' }}>
-                  Terhitung mulai tanggal {certData.student?.start_period || '23 Januari 2026'} sampai<br />
-                  dengan {certData.student?.end_period || '02 Juni 2026'}
-                </p>
+              <div style={{ position: 'absolute', top: '600px', left: 0, width: '100%', textAlign: 'center' }}>
+                <p style={{ fontSize: '1.4rem', fontFamily: 'sans-serif', color: '#111827', margin: 0, fontWeight: 500 }}>Terhitung mulai tanggal {certData.student?.start_period || '-'} sampai dengan {certData.student?.end_period || '-'}</p>
               </div>
             </div>
-
-            {/* HALAMAN 2: DESAIN TABEL RAPOR NILAI (PORTRAIT) */}
-            <div id="cert-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif', overflow: 'hidden' }}>
-
-              <img src="/template-portrait-back.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} crossOrigin="anonymous" />
-
-              <div style={{ position: 'relative', zIndex: 1, padding: '160px 95px 120px 95px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                  <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e1b4b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.2rem 0' }}>LEMBAR PENILAIAN ON THE JOB TRAINING</h2>
-                </div>
-
-                {/* TABEL INFO PESERTA */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #1e293b', marginBottom: '1rem', fontSize: '0.75rem', color: '#000000' }}>
-                  <tbody style={{ color: '#000000' }}>
-                    {[
-                      ['1.', 'Nama', certData.student?.name || '-'],
-                      ['2.', 'Kelas', certData.grades?.kelas || '-'],
-                      ['3.', 'Sekolah', certData.student?.asal_sekolah || '-'],
-                      ['4.', 'Jurusan', certData.grades?.jurusan || '-'],
-                      ['5.', 'Tanggal', `${certData.student?.start_period || '-'} s/d ${certData.student?.end_period || '-'}`],
-                      ['6.', 'Posisi', certData.student?.divisi || '-'],
-                      ['7.', 'Penempatan', certData.student?.asal_kantor || '-'],
-                      ['8.', 'Pembimbing OJT', profile?.name || '-'],
-                      ['9.', 'No. Handphone', certData.student?.no_telp || '-'],
-                    ].map((row, idx) => (
-                      <tr key={idx}>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', width: '5%', textAlign: 'center', color: '#000000', verticalAlign: 'middle' }}>{row[0]}</td>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', width: '25%', color: '#000000', verticalAlign: 'middle' }}>{row[1]}</td>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', fontWeight: 700, color: '#000000', verticalAlign: 'middle' }}>{row[2]}</td>
+            <div id="cert-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif' }}>
+              <img src="/template-portrait-back.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+              <div style={{ position: 'relative', padding: '160px 95px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e1b4b', textTransform: 'uppercase', marginBottom: '1rem' }}>LEMBAR PENILAIAN OJT</h2>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #1e293b', marginBottom: '1rem', fontSize: '0.75rem' }}>
+                  <tbody>
+                    {[['Nama', certData.student?.name || '-'], ['Kelas', certData.grades?.kelas || '-'], ['Sekolah', certData.student?.asal_sekolah || '-'], ['Jurusan', certData.grades?.jurusan || '-'], ['Tanggal', `${certData.student?.start_period || '-'} s/d ${certData.student?.end_period || '-'}`], ['Posisi', certData.student?.divisi || '-']].map((row, i) => (
+                      <tr key={i}>
+                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', fontWeight: 700 }}>{row[0]}</td>
+                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', fontWeight: 700 }}>{row[1]}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-
-                {/* TABEL NILAI */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #1e293b', fontSize: '0.7rem', color: '#000000' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #1e293b', fontSize: '0.7rem' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#4c1d63', color: '#ffffff' }}>
-                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', width: '5%', verticalAlign: 'middle' }}>No.</th>
-                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', width: '55%', verticalAlign: 'middle' }}>Unsur Penilaian</th>
-                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', width: '20%', verticalAlign: 'middle' }}>Nilai Angka</th>
-                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', width: '20%', verticalAlign: 'middle' }}>Nilai Huruf</th>
+                    <tr style={{ backgroundColor: '#4c1d63', color: '#fff' }}>
+                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem' }}>Aspek</th>
+                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', textAlign: 'center' }}>Nilai</th>
+                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', textAlign: 'center' }}>Predikat</th>
                     </tr>
                   </thead>
-                  <tbody style={{ color: '#000000' }}>
-
-                    {/* Kedisiplinan */}
-                    <tr style={{ backgroundColor: '#e8deef', fontWeight: 700 }}><td colSpan={4} style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kedisiplinan</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>1</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Ketepatan waktu/disiplin</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q1_waktu}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q1_waktu || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>2</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Sikap kerja/prosedur kerja</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q2_sikap}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q2_sikap || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>3</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Tanggung jawab terhadap tugas</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q3_tanggung_jawab}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q3_tanggung_jawab || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>4</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kehadiran/absensi</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q4_kehadiran}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q4_kehadiran || 0)}</td></tr>
-
-                    {/* Prestasi Kerja */}
-                    <tr style={{ backgroundColor: '#e8deef', fontWeight: 700 }}><td colSpan={4} style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Prestasi Kerja</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>5</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kemampuan Kerja</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q5_kemampuan}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q5_kemampuan || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>6</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Keterampilan Kerja</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q6_keterampilan}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q6_keterampilan || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>7</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kualitas Hasil Kerja</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q7_kualitas}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q7_kualitas || 0)}</td></tr>
-
-                    {/* Kemampuan Beradaptasi */}
-                    <tr style={{ backgroundColor: '#e8deef', fontWeight: 700 }}><td colSpan={4} style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kemampuan Beradaptasi</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>8</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kemampuan Berkomunikasi</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q8_komunikasi}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q8_komunikasi || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>9</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kerjasama</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q9_kerjasama}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q9_kerjasama || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>10</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Kerajinan/inisiatif</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q10_inisiatif}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q10_inisiatif || 0)}</td></tr>
-
-                    {/* Lain-lain */}
-                    <tr style={{ backgroundColor: '#e8deef', fontWeight: 700 }}><td colSpan={4} style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Lain-lain</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>11</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Memiliki rasa Percaya Diri</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q11_percaya_diri || 0}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q11_percaya_diri || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>12</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Mematuhi aturan dan tata tertib OJT</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q12_patuh_aturan || 0}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q12_patuh_aturan || 0)}</td></tr>
-                    <tr><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', verticalAlign: 'middle' }}>13</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', verticalAlign: 'middle' }}>Penampilan/kerapihan</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{certData.grades?.q13_penampilan || 0}</td><td style={{ border: '1px solid #1e293b', padding: '0.2rem 0.4rem', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>{getLetterGrade(certData.grades?.q13_penampilan || 0)}</td></tr>
-
-                    {/* Nilai Rata-rata */}
-                    <tr style={{ backgroundColor: '#e8deef', fontWeight: 700 }}>
-                      <td colSpan={2} style={{ border: '1px solid #1e293b', padding: '0.25rem', textAlign: 'left', paddingLeft: '1.5rem', verticalAlign: 'middle' }}>Nilai Rata-rata</td>
-                      <td style={{ border: '1px solid #1e293b', padding: '0.25rem', textAlign: 'center', fontWeight: 900, verticalAlign: 'middle' }}>
-                        {((certData.grades?.q1_waktu + certData.grades?.q2_sikap + certData.grades?.q3_tanggung_jawab + certData.grades?.q4_kehadiran + certData.grades?.q5_kemampuan + certData.grades?.q6_keterampilan + certData.grades?.q7_kualitas + certData.grades?.q8_komunikasi + certData.grades?.q9_kerjasama + certData.grades?.q10_inisiatif + (certData.grades?.q11_percaya_diri || 0) + (certData.grades?.q12_patuh_aturan || 0) + (certData.grades?.q13_penampilan || 0)) / 13).toFixed(1)}
-                      </td>
-                      <td style={{ border: '1px solid #1e293b', padding: '0.25rem', textAlign: 'center', fontWeight: 900, verticalAlign: 'middle' }}>
-                        {getLetterGrade((certData.grades?.q1_waktu + certData.grades?.q2_sikap + certData.grades?.q3_tanggung_jawab + certData.grades?.q4_kehadiran + certData.grades?.q5_kemampuan + certData.grades?.q6_keterampilan + certData.grades?.q7_kualitas + certData.grades?.q8_komunikasi + certData.grades?.q9_kerjasama + certData.grades?.q10_inisiatif + (certData.grades?.q11_percaya_diri || 0) + (certData.grades?.q12_patuh_aturan || 0) + (certData.grades?.q13_penampilan || 0)) / 13)}
-                      </td>
+                  <tbody>
+                    {['q1_waktu','q2_sikap','q3_tanggung_jawab','q4_kehadiran','q5_kemampuan','q6_keterampilan','q7_kualitas','q8_komunikasi','q9_kerjasama','q10_inisiatif','q11_percaya_diri','q12_patuh_aturan','q13_penampilan'].map((q,i) => (
+                      <tr key={q} style={{ backgroundColor: i % 2 === 0 ? '#e8deef' : 'white' }}>
+                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem' }}>{['Waktu','Sikap','Tanggung Jawab','Kehadiran','Kemampuan','Keterampilan','Kualitas','Komunikasi','Kerjasama','Inisiatif','Percaya Diri','Kepatuhan','Penampilan'][i]}</td>
+                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{certData.grades?.[q] || 0}</td>
+                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{getLetterGrade(certData.grades?.[q] || 0)}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ backgroundColor: '#d8bfd8', fontWeight: 800 }}>
+                      <td colSpan={3} style={{ border: '1px solid #1e293b', padding: '0.4rem', textAlign: 'center' }}>RATA-RATA AKHIR</td>
                     </tr>
                   </tbody>
                 </table>
-
-                <div style={{ marginTop: '0.3rem', fontSize: '0.65rem', fontStyle: 'italic', color: '#1e293b', fontWeight: 700 }}>
-                  <p style={{ margin: '0 0 0.15rem 0' }}>Ketentuan penilaian:</p>
-                  <p style={{ margin: 0, fontWeight: 500 }}>96 s/d 100 : Nilai A+, 91 s/d 95 : Nilai A, 86 s/d 90 : Nilai A-, 81 s/d 85 : Nilai B+, 76 s/d 80 : Nilai B, 71 s/d 75 : Nilai B-, 66 s/d 70 : Nilai C</p>
-                </div>
-
-                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingRight: '1rem', paddingBottom: '0.2rem' }}>
-                </div>
               </div>
             </div>
           </div>
         )}
       </div>
-
     </div>
   )
 }

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Inter } from 'next/font/google'
 import Image from 'next/image'
 import Swal from 'sweetalert2'
+import { LoadingMDU } from '@/components/LoadingMDU'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,9 +17,33 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [initialLoading, setInitialLoading] = useState(true)
 
   const [isForgotPassword, setIsForgotPassword] = useState(false)
   const router = useRouter()
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile?.role === 'mentor') router.push('/mentor')
+        else if (profile?.role === 'admin') router.push('/admin')
+        else router.push('/ojt')
+      }
+      setInitialLoading(false)
+    }
+    
+    checkAuth()
+  }, [router])
+
+  if (initialLoading) return <LoadingMDU message="Memulai aplikasi..." />
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

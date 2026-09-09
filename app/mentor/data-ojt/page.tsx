@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { createOJTAccount, updateOJTProfile, deleteOJTAccount, archiveOJTAccount, resetPasswordByMentor } from '../actions'
 import Swal from 'sweetalert2'
 import { Toaster, toast } from 'sonner'
+import { LoadingMDU } from '@/components/LoadingMDU'
+
 
 export default function DataOJTPage() {
   const [user, setUser] = useState<any>(null)
@@ -188,7 +190,7 @@ export default function DataOJTPage() {
     setIsResetting(false)
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-indigo-950 font-medium">Memuat Manajemen Data...</div>
+  if (loading) return <LoadingMDU message="Memuat Manajemen Data..." />
 
   return (
     <div className="min-h-screen bg-[#f8faff] font-sans flex">

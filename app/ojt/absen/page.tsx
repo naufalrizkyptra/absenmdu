@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
-import { LoadingMDU } from '@/components/LoadingMDU'
 
 // --- KORDINAT KANTOR MDU ---
 const LOKASI_CABANG: Record<string, { lat: number, lng: number }> = {
@@ -314,10 +313,26 @@ export default function AbsenPage() {
   }
 
   if (isCheckingRole) {
-    return <LoadingMDU message="Memuat profil..." />
+    return (
+      <div className="min-h-screen bg-[#f8faff] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Memuat profil...</p>
+        </div>
+      </div>
+    )
   }
 
-  if (loading) return <LoadingMDU message="Memuat Data Presensi..." />
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f8faff] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Memuat Data Presensi...</p>
+        </div>
+      </div>
+    )
+  }
   if (!user) return null
 
   return (

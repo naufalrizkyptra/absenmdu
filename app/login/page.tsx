@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Inter } from 'next/font/google'
 import Image from 'next/image'
 import Swal from 'sweetalert2'
-import { LoadingMDU } from '@/components/LoadingMDU'
+import { LogoLoader } from '@/components/LogoLoader'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -43,7 +43,21 @@ export default function Login() {
     checkAuth()
   }, [router])
 
-  if (initialLoading) return <LoadingMDU message="Memulai aplikasi..." />
+  if (initialLoading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-indigo-900 via-purple-800 to-black">
+      <LogoLoader
+        size={128}
+        gradientId="login-logo-loader"
+        colorFrom="#818cf8"
+        colorTo="#c4b5fd"
+        duration={2}
+        dashRatio={0.25}
+      />
+      <p className="text-sm font-semibold text-white/70 tracking-wide animate-fade-text">
+        Memulai aplikasi...
+      </p>
+    </div>
+  )
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

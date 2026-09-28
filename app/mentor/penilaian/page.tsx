@@ -53,13 +53,12 @@ export default function PenilaianPage() {
     const { data: mentorProfile } = await supabase.from('users').select('name, avatar_url').eq('id', user.id).single()
     if (mentorProfile) setProfile(mentorProfile)
 
-    // FILTER ACTIVE PARTICIPANTS ONLY
+    // AMBIL SEMUA PESERTA (AKTIF + ALUMNI) BIAR SERTIFIKAT ALUMNI TETAP BISA DIAKSES
     const { data: teamData } = await supabase
       .from('users')
       .select('*')
       .eq('mentor_id', user.id)
       .eq('role', 'ojt')
-      .eq('status_ojt', 'aktif')
     if (teamData) setMentees(teamData)
 
     const { data: existingGrades } = await supabase.from('ojt_grades').select('*').eq('mentor_id', user.id)
@@ -546,8 +545,13 @@ export default function PenilaianPage() {
                                 {grade && <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-emerald-100 to-transparent rounded-bl-full -z-10 opacity-60"></div>}
 
                                 <div className="flex justify-between items-start mb-6">
-                                  <div className="pr-4">
-                                    <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors">{m.name}</h3>
+                                  <div className="pr-4 flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors">{m.name}</h3>
+                                      {m.status_ojt === 'selesai' && (
+                                        <span className="px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-700 rounded-full border border-amber-200 shrink-0">Alumni</span>
+                                      )}
+                                    </div>
                                     <p className="text-xs text-slate-500 font-semibold mt-1">{m.nip || 'Belum Ada NIP'} • {m.divisi}</p>
                                   </div>
                                   {grade && (
@@ -614,6 +618,7 @@ export default function PenilaianPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {gradesData.map(grade => {
                           const student = mentees.find(m => m.id === grade.user_id)
+                          // Jika data student tidak ditemukan (misal sudah dihapus permanen), skip
                           if (!student) return null
                           
                           const total = grade.q1_waktu + grade.q2_sikap + grade.q3_tanggung_jawab + grade.q4_kehadiran + grade.q5_kemampuan + grade.q6_keterampilan + grade.q7_kualitas + grade.q8_komunikasi + grade.q9_kerjasama + grade.q10_inisiatif + (grade.q11_percaya_diri || 0) + (grade.q12_patuh_aturan || 0) + (grade.q13_penampilan || 0)
@@ -621,16 +626,33 @@ export default function PenilaianPage() {
                           const letter = getLetterGrade(avg)
 
                           return (
-                            <div key={grade.id} className="bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-2xl border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all">
-                              <div className="flex items-start justify-between mb-4">
+                            <div key={grade.id} className="bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-2xl border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all flex flex-col">
+                              <div className="flex items-start justify-between mb-3">
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="font-bold text-slate-800 text-base truncate">{student.name}</h3>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-bold text-slate-800 text-base truncate">{student.name}</h3>
+                                    {student.status_ojt === 'selesai' && (
+                                      <span className="px-2 py-0.5 text-xs font-bold bg-amber-200 text-amber-800 rounded-full border border-amber-300 shrink-0">Alumni</span>
+                                    )}
+                                  </div>
                                   <p className="text-xs text-slate-500 font-semibold mt-0.5">{student.divisi}</p>
+                                  {grade.no_sertifikat && (
+                                    <p className="text-xs text-amber-700 font-mono mt-1 bg-amber-100 px-2 py-0.5 rounded-lg inline-block">{grade.no_sertifikat}</p>
+                                  )}
                                 </div>
-                                <div className="bg-amber-100 text-amber-700 border border-amber-200 font-black text-lg w-10 h-10 rounded-full flex items-center justify-center shrink-0">
+                                <div className="bg-amber-100 text-amber-700 border border-amber-200 font-black text-lg w-10 h-10 rounded-full flex items-center justify-center shrink-0 ml-3">
                                   {letter}
                                 </div>
                               </div>
+                              <button
+                                onClick={() => executeGeneratePDF(student.id, student.name)}
+                                className="mt-auto w-full py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 hover:from-orange-600 hover:to-amber-600 hover:shadow-orange-500/40 transition-all"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Cetak Ulang Sertifikat
+                              </button>
                             </div>
                           )
                         })}

@@ -32,14 +32,14 @@ export default function Login() {
           .select('role')
           .eq('id', user.id)
           .single()
-        
+
         if (profile?.role === 'mentor') router.push('/mentor')
         else if (profile?.role === 'admin') router.push('/admin')
         else router.push('/ojt')
       }
       setInitialLoading(false)
     }
-    
+
     checkAuth()
   }, [router])
 
@@ -48,10 +48,9 @@ export default function Login() {
       <LogoLoader
         size={128}
         gradientId="login-logo-loader"
-        colorFrom="#818cf8"
-        colorTo="#c4b5fd"
         duration={2}
         dashRatio={0.25}
+        overlay={false}
       />
       <p className="text-sm font-semibold text-white/70 tracking-wide animate-fade-text">
         Memulai aplikasi...

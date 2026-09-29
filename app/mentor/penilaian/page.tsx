@@ -799,37 +799,36 @@ export default function PenilaianPage() {
               </div>
             </div>
             <div id="cert-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif', color: '#000000' }}>
-              <img src="/template-portrait-back.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
-              <div style={{ position: 'relative', padding: '160px 95px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e1b4b', textTransform: 'uppercase', marginBottom: '1rem' }}>LEMBAR PENILAIAN OJT</h2>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #1e293b', marginBottom: '1rem', fontSize: '0.75rem' }}>
+              <div style={{ position: 'relative', padding: '120px 95px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0F3357', textTransform: 'uppercase', marginBottom: '1rem' }}>LEMBAR PENILAIAN OJT</h2>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', marginBottom: '1rem', fontSize: '0.75rem' }}>
                   <tbody>
                     {[['Nama', certData.student?.name || '-'], ['Kelas', certData.grades?.kelas || '-'], ['Sekolah', certData.student?.asal_sekolah || '-'], ['Jurusan', certData.grades?.jurusan || '-'], ['Tanggal', `${certData.student?.start_period || '-'} s/d ${certData.student?.end_period || '-'}`], ['Posisi', certData.student?.divisi || '-']].map((row, i) => (
                       <tr key={i}>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', fontWeight: 700 }}>{row[0]}</td>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', fontWeight: 700 }}>{row[1]}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '0.3rem', fontWeight: 700 }}>{row[0]}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '0.3rem', fontWeight: 700 }}>{row[1]}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #1e293b', fontSize: '0.7rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', fontSize: '0.7rem' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#4c1d63', color: '#fff' }}>
-                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem' }}>Aspek</th>
-                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', textAlign: 'center' }}>Nilai</th>
-                      <th style={{ border: '1px solid #1e293b', padding: '0.4rem', textAlign: 'center' }}>Predikat</th>
+                    <tr style={{ backgroundColor: '#0F3357', color: '#FCE91A' }}>
+                      <th style={{ border: '1px solid #0F3357', padding: '0.4rem' }}>Aspek</th>
+                      <th style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>Nilai</th>
+                      <th style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>Predikat</th>
                     </tr>
                   </thead>
                   <tbody>
                     {['q1_waktu','q2_sikap','q3_tanggung_jawab','q4_kehadiran','q5_kemampuan','q6_keterampilan','q7_kualitas','q8_komunikasi','q9_kerjasama','q10_inisiatif','q11_percaya_diri','q12_patuh_aturan','q13_penampilan'].map((q,i) => (
-                      <tr key={q} style={{ backgroundColor: i % 2 === 0 ? '#e8deef' : 'white' }}>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem' }}>{['Waktu','Sikap','Tanggung Jawab','Kehadiran','Kemampuan','Keterampilan','Kualitas','Komunikasi','Kerjasama','Inisiatif','Percaya Diri','Kepatuhan','Penampilan'][i]}</td>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{certData.grades?.[q] || 0}</td>
-                        <td style={{ border: '1px solid #1e293b', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{getLetterGrade(certData.grades?.[q] || 0)}</td>
+                      <tr key={q} style={{ backgroundColor: i % 2 === 0 ? '#f0f5fa' : 'white' }}>
+                        <td style={{ border: '1px solid #0F3357', padding: '0.3rem' }}>{['Waktu','Sikap','Tanggung Jawab','Kehadiran','Kemampuan','Keterampilan','Kualitas','Komunikasi','Kerjasama','Inisiatif','Percaya Diri','Kepatuhan','Penampilan'][i]}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{certData.grades?.[q] || 0}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{getLetterGrade(certData.grades?.[q] || 0)}</td>
                       </tr>
                     ))}
-                    <tr style={{ backgroundColor: '#d8bfd8', fontWeight: 800 }}>
-                      <td colSpan={3} style={{ border: '1px solid #1e293b', padding: '0.4rem', textAlign: 'center' }}>RATA-RATA AKHIR</td>
+                    <tr style={{ backgroundColor: '#FCE91A', color: '#0F3357', fontWeight: 800 }}>
+                      <td colSpan={3} style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>RATA-RATA AKHIR</td>
                     </tr>
                   </tbody>
                 </table>

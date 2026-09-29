@@ -798,9 +798,9 @@ export default function PenilaianPage() {
                 <p style={{ fontSize: '1.4rem', fontFamily: 'sans-serif', color: '#111827', margin: 0, fontWeight: 500 }}>Terhitung mulai tanggal {certData.student?.start_period || '-'} sampai dengan {certData.student?.end_period || '-'}</p>
               </div>
             </div>
-            <div id="cert-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif' }}>
+            <div id="cert-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif', color: '#000000' }}>
               <img src="/template-portrait-back.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
-              <div style={{ position: 'relative', padding: '160px 95px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ position: 'relative', padding: '160px 95px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e1b4b', textTransform: 'uppercase', marginBottom: '1rem' }}>LEMBAR PENILAIAN OJT</h2>
                 <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #1e293b', marginBottom: '1rem', fontSize: '0.75rem' }}>
                   <tbody>

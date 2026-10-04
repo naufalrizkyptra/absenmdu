@@ -71,10 +71,13 @@ export default function AdminDashboard() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  if (loading) return <LoadingMDU message="Memuat Dashboard..." />
+  
   if (!user) return null
 
   return (
+    <>
+      {loading && <LoadingMDU message="Memuat Dashboard..." />}
+      
     <div className="min-h-screen bg-[#f8faff] font-sans flex">
       {/* MOBILE DRAWER OVERLAY */}
       {mobileMenuOpen && (
@@ -318,5 +321,6 @@ export default function AdminDashboard() {
         </div>
       </main>
     </div>
+    </>
   )
 }

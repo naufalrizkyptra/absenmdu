@@ -165,9 +165,12 @@ export default function IzinPage() {
     return new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   }
 
-  if (loading) return <LoadingMDU message="Memuat Data..." />
+  
 
   return (
+    <>
+      {loading && <LoadingMDU message="Memuat Data..." />}
+      
     <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
       
@@ -432,5 +435,6 @@ export default function IzinPage() {
       </main>
 
     </div>
+    </>
   )
 }

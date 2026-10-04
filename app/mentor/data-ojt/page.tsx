@@ -190,10 +190,10 @@ export default function DataOJTPage() {
     setIsResetting(false)
   }
 
-  if (loading) return <LoadingMDU message="Memuat Manajemen Data..." />
-
   return (
-    <div className="min-h-screen bg-[#f8faff] font-sans flex">
+    <>
+      {loading && <LoadingMDU message="Memuat Manajemen Data..." />}
+      <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
 
       {/* MOBILE DRAWER OVERLAY */}
@@ -802,6 +802,7 @@ export default function DataOJTPage() {
         </div>
       )}
 
-    </div>
+      </div>
+    </>
   )
 }

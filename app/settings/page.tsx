@@ -61,9 +61,12 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) return <LoadingMDU message="Memuat pengaturan..." />
+  
 
   return (
+    <>
+      {loading && <LoadingMDU message="Memuat pengaturan..." />}
+      
     <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-3xl mx-auto space-y-6">
         
@@ -104,5 +107,6 @@ export default function SettingsPage() {
 
       </div>
     </div>
+    </>
   )
 }

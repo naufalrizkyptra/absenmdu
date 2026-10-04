@@ -197,19 +197,14 @@ export default function AbsenPage() {
   const mapCenterLat = userLoc ? userLoc.lat : targetLat
   const mapCenterLng = userLoc ? userLoc.lng : targetLng
 
-  if (isCheckingRole) {
-    return (
-      <div className="min-h-screen bg-[#f8faff] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1e1b4b]"></div>
-      </div>
-    )
-  }
-
-  if (loading) return <LoadingMDU message="Memuat Data Presensi..." />
-  if (!user) return null
+  if (!isCheckingRole && !loading && !user) return null
 
   return (
-    <div className="min-h-screen bg-[#f8faff] flex flex-col md:flex-row font-sans">
+    <>
+      {(isCheckingRole || loading) && (
+        <LoadingMDU message={isCheckingRole ? "Memeriksa Akses..." : "Memuat Data Presensi..."} />
+      )}
+      <div className="min-h-screen bg-[#f8faff] flex flex-col md:flex-row font-sans">
 
       <Toaster position="top-center" richColors />
 
@@ -441,7 +436,7 @@ export default function AbsenPage() {
           </button>
         </div>
       </div>
-
     </div>
+    </>
   )
 }

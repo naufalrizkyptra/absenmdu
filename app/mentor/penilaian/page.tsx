@@ -239,12 +239,12 @@ export default function PenilaianPage() {
     return filtered
   }
 
-  if (loading) return <LoadingMDU message="Memuat Modul Penilaian..." />
-
   const filteredMentees = getFilteredMentees()
 
   return (
-    <div className="min-h-screen bg-[#f8faff] font-sans flex">
+    <>
+      {loading && <LoadingMDU message="Memuat Modul Penilaian..." />}
+      <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
 
       {/* MOBILE DRAWER OVERLAY */}
@@ -837,6 +837,7 @@ export default function PenilaianPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }

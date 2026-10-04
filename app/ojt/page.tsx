@@ -139,9 +139,12 @@ export default function BerandaOJT() {
     localStorage.setItem('wfh_modal_timestamp', Date.now().toString())
   }
 
-  if (loading) return <LoadingMDU message="Memuat Dasbor Peserta..." />
+  
 
   return (
+    <>
+      {loading && <LoadingMDU message="Memuat Dasbor Peserta..." />}
+      
     <div className="min-h-[100dvh] bg-[#f8faff] flex flex-col md:flex-row font-sans">
       <Toaster position="top-center" richColors />
       
@@ -557,5 +560,6 @@ export default function BerandaOJT() {
       </div>
 
     </div>
+    </>
   )
 }

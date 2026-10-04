@@ -114,11 +114,12 @@ export default function MentorDashboard() {
   const formatTime = (isoString: string) => new Date(isoString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
   const getFormattedDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  if (loading) return <LoadingMDU message="Memuat Panel Mentor..." />
-  if (!user) return null
+  if (!loading && !user) return null
 
   return (
-    <div className="min-h-screen bg-[#f8faff] font-sans flex">
+    <>
+      {loading && <LoadingMDU message="Memuat Panel Mentor..." />}
+      <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
 
       {/* MOBILE DRAWER OVERLAY */}
@@ -463,6 +464,7 @@ export default function MentorDashboard() {
           
         </div>
       </main>
-    </div>
+      </div>
+    </>
   )
 }

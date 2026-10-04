@@ -139,9 +139,12 @@ export default function VerifikasiIzinPage() {
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
   const filteredIzin = izinData.filter(t => t.status === filterStatus)
 
-  if (loading) return <LoadingMDU message="Memuat Panel Verifikasi Izin..." />
+  
 
   return (
+    <>
+      {loading && <LoadingMDU message="Memuat Panel Verifikasi Izin..." />}
+      
     <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
 
@@ -344,5 +347,6 @@ export default function VerifikasiIzinPage() {
         </div>
       </main>
     </div>
+    </>
   )
 }

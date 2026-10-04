@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
-
+import { LoadingMDU } from '@/components/LoadingMDU'
 // --- KORDINAT KANTOR MDU ---
 const LOKASI_CABANG: Record<string, { lat: number, lng: number }> = {
   'Jatiwaringin': { lat: -6.247942342659016, lng: 106.90724753666649 },
@@ -312,31 +312,14 @@ export default function AbsenPage() {
     return new Date(isoString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  if (isCheckingRole) {
-    return (
-      <div className="min-h-screen bg-[#f8faff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Memuat profil...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f8faff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Memuat Data Presensi...</p>
-        </div>
-      </div>
-    )
-  }
-  if (!user) return null
+  if (!isCheckingRole && !loading && !user) return null
 
   return (
-    <div className="min-h-screen bg-[#f8faff] font-sans flex">
+    <>
+      {(isCheckingRole || loading) && (
+        <LoadingMDU message={isCheckingRole ? "Memeriksa profil..." : "Memuat Data Presensi..."} />
+      )}
+      <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
 
       {/* SIDEBAR DESKTOP (Struktur Fixed Sama Seperti Beranda) */}
@@ -659,6 +642,7 @@ export default function AbsenPage() {
         </div>
       </main>
 
-    </div>
+      </div>
+    </>
   )
 }

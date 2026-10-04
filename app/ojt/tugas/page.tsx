@@ -96,9 +96,12 @@ export default function TugasBoostPage() {
     return new Date(isoString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  if (loading) return <LoadingMDU message="Memuat Modul Tugas..." />
+  
 
   return (
+    <>
+      {loading && <LoadingMDU message="Memuat Modul Tugas..." />}
+      
     <div className="min-h-screen bg-[#f8faff] font-sans flex">
       <Toaster position="top-center" richColors />
       
@@ -349,5 +352,6 @@ export default function TugasBoostPage() {
       </main>
 
     </div>
+    </>
   )
 }

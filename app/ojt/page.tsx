@@ -350,6 +350,18 @@ export default function BerandaOJT() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span className="font-medium">Pengajuan Izin</span>
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('open-pwa-tutorial'))
+                  }
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-indigo-600 hover:bg-indigo-50 font-medium"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                <span>Pasang di HP (PWA)</span>
+              </button>
             </nav>
           </div>
 
@@ -524,6 +536,42 @@ export default function BerandaOJT() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* PROMO / SHORTCUT PWA */}
+            <div className="px-4 md:px-8 mt-4 md:mt-6">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl md:rounded-3xl p-4 md:p-5 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md p-1.5 flex items-center justify-center shrink-0 border border-white/25 shadow-inner">
+                    <img src="/icon-192.png" alt="MDU Logo" className="w-full h-full object-contain" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                        Fitur Baru
+                      </span>
+                      <h3 className="font-bold text-sm md:text-base text-white">Buka MDU Portal Layaknya Aplikasi HP</h3>
+                    </div>
+                    <p className="text-xs text-blue-100 mt-0.5">
+                      Tambahkan ke Layar Utama (Homescreen) agar absensi harian lebih cepat & praktis.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      window.dispatchEvent(new CustomEvent('open-pwa-tutorial'))
+                    }
+                  }}
+                  className="px-4 py-2.5 bg-white text-indigo-700 hover:bg-blue-50 text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 cursor-pointer"
+                >
+                  <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <span>Cara Pasang di HP</span>
+                </button>
               </div>
             </div>
 

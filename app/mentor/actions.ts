@@ -178,7 +178,22 @@ export async function submitOJTGrades(gradeData: any) {
   }
 }
 
-// 6. MESIN CETAK SERTIFIKAT PDF
+// 5.b FUNGSI HAPUS / RESET NILAI OJT (BATALKAN PENILAIAN / UNDO)
+export async function deleteOJTGrades(userId: string) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('ojt_grades')
+      .delete()
+      .eq('user_id', userId)
+
+    if (error) throw error
+
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, message: error.message }
+  }
+}
+
 // 6. MESIN CETAK SERTIFIKAT PDF
 export async function generateCertificatePDF(studentId: string) {
   try {

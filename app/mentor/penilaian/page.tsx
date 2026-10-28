@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import {
-  submitOJTGrades, generateCertificatePDF, deleteOJTGrades
+  submitOJTGrades, generateCertificatePDF, deleteOJTGrades, getGlobalLatestCertificate
 } from '../actions'
 import { Toaster, toast } from 'sonner'
 import Swal from 'sweetalert2'
@@ -25,6 +25,10 @@ export default function PenilaianPage() {
   const [activeView, setActiveView] = useState<'list' | 'form'>('list')
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // STATE SINKRONISASI NOMOR SERTIFIKAT SELURUH MENTOR (GLOBAL)
+  const [globalLatestCert, setGlobalLatestCert] = useState<string>('')
+  const [globalNextCert, setGlobalNextCert] = useState<string>('')
 
   // NEW STATE UNTUK TABS & SEARCH
   const [activeTab, setActiveTab] = useState<'belum-dinilai' | 'sudah-dinilai' | 'arsip'>('belum-dinilai')
@@ -63,6 +67,13 @@ export default function PenilaianPage() {
     const { data: existingGrades } = await supabase.from('ojt_grades').select('*').eq('mentor_id', user.id)
     if (existingGrades) setGradesData(existingGrades)
 
+    // AMBIL NOMOR SERTIFIKAT TERBARU LINTAS SELURUH MENTOR
+    const certSync = await getGlobalLatestCertificate()
+    if (certSync.success) {
+      setGlobalLatestCert(certSync.latestCert)
+      setGlobalNextCert(certSync.nextCert)
+    }
+
     setLoading(false)
   }
 
@@ -87,17 +98,22 @@ export default function PenilaianPage() {
   }
 
   // HELPER UNTUK MENDAPATKAN NOMOR SERTIFIKAT BERIKUTNYA (+1)
-  const getNextCertificateNumber = (certNo: string) => {
-    if (!certNo) return ''
+  const getNextCertificateNumber = (certNo?: string) => {
+    if (globalNextCert && (!certNo || certNo === globalLatestCert)) {
+      return globalNextCert
+    }
+    const target = certNo || globalLatestCert
+    if (!target) return globalNextCert || ''
+
     // Pola 1: Dimulai dengan angka (e.g., "306/MDU/V/2026" atau "005/SK/2026")
-    const matchLeading = certNo.match(/^(\d+)(.*)$/)
+    const matchLeading = target.match(/^(\d+)(.*)$/)
     if (matchLeading) {
       const numStr = matchLeading[1]
       const nextNum = (parseInt(numStr, 10) + 1).toString().padStart(numStr.length, '0')
       return `${nextNum}${matchLeading[2]}`
     }
     // Pola 2: Angka di tengah atau akhir (e.g., "MDU/306/V/2026")
-    const matchMiddle = certNo.match(/^(.*?)(\d+)(.*?)$/)
+    const matchMiddle = target.match(/^(.*?)(\d+)(.*?)$/)
     if (matchMiddle) {
       const prefix = matchMiddle[1]
       const numStr = matchMiddle[2]
@@ -105,11 +121,13 @@ export default function PenilaianPage() {
       const nextNum = (parseInt(numStr, 10) + 1).toString().padStart(numStr.length, '0')
       return `${prefix}${nextNum}${suffix}`
     }
-    return certNo
+    return target
   }
 
-  // AMBIL NOMOR SERTIFIKAT TERAKHIR YANG PERNAH DIISI MENTOR
+  // AMBIL NOMOR SERTIFIKAT TERAKHIR YANG PERNAH DIISI (PRIORITAS DATABASE GLOBAL SELURUH MENTOR)
   const getLatestCertificateFromGrades = () => {
+    if (globalLatestCert) return globalLatestCert
+
     const list = gradesData
       .map(g => g.no_sertifikat)
       .filter((n): n is string => Boolean(n && typeof n === 'string' && n.trim() !== ''))
@@ -151,7 +169,8 @@ export default function PenilaianPage() {
   const openGradeForm = (student: any) => {
     setSelectedStudent(student)
     const existing = gradesData.find(g => g.user_id === student.id)
-    const lastCert = getLatestCertificateFromGrades()
+    const lastCert = globalLatestCert || getLatestCertificateFromGrades()
+    const autoNext = globalNextCert || (lastCert ? getNextCertificateNumber(lastCert) : '')
     const lastMeta = getLastKelasAndJurusan()
 
     if (existing) {
@@ -160,19 +179,18 @@ export default function PenilaianPage() {
         q5: existing.q5_kemampuan, q6: existing.q6_keterampilan, q7: existing.q7_kualitas,
         q8: existing.q8_komunikasi, q9: existing.q9_kerjasama, q10: existing.q10_inisiatif,
         q11: existing.q11_percaya_diri || 0, q12: existing.q12_patuh_aturan || 0, q13: existing.q13_penampilan || 0,
-        no_sertifikat: existing.no_sertifikat || (lastCert ? getNextCertificateNumber(lastCert) : ''),
+        no_sertifikat: existing.no_sertifikat || autoNext,
         kelas: existing.kelas || lastMeta.kelas || '',
         jurusan: existing.jurusan || lastMeta.jurusan || student.jurusan || student.divisi || ''
       })
     } else {
-      // SINKRONKAN otomatis nomor sertifikat berikutnya (+1), kelas, dan jurusan dari pengisian sebelumnya!
-      const autoCert = lastCert ? getNextCertificateNumber(lastCert) : ''
+      // SINKRONKAN otomatis nomor sertifikat berikutnya (+1), kelas, dan jurusan dari pengisian seluruh mentor!
       setGrades({
         q1: 0, q2: 0, q3: 0, q4: 0,
         q5: 0, q6: 0, q7: 0,
         q8: 0, q9: 0, q10: 0,
         q11: 0, q12: 0, q13: 0,
-        no_sertifikat: autoCert,
+        no_sertifikat: autoNext,
         kelas: lastMeta.kelas || '',
         jurusan: lastMeta.jurusan || student.jurusan || student.divisi || ''
       })
@@ -899,32 +917,39 @@ export default function PenilaianPage() {
                       </h3>
                       <div className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl flex flex-col hover:border-indigo-100 transition-colors">
                         <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                            Nomor Sertifikat (Contoh: 306/MDU/V/2026)
-                          </span>
-                          {getLatestCertificateFromGrades() && (
+                          <div>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                              Nomor Sertifikat
+                            </span>
+                            {(globalLatestCert || getLatestCertificateFromGrades()) && (
+                              <span className="ml-2 text-xs font-semibold text-slate-500">
+                                (Terakhir: <strong className="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200/60">{globalLatestCert || getLatestCertificateFromGrades()}</strong>)
+                              </span>
+                            )}
+                          </div>
+                          {(globalLatestCert || getLatestCertificateFromGrades()) && (
                             <div className="flex items-center gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => setGrades({ ...grades, no_sertifikat: getLatestCertificateFromGrades() })}
+                                onClick={() => setGrades({ ...grades, no_sertifikat: globalLatestCert || getLatestCertificateFromGrades() })}
                                 className="text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 border border-indigo-200/60 shadow-xs"
-                                title={`Gunakan nomor yang sama persis: ${getLatestCertificateFromGrades()}`}
+                                title={`Gunakan nomor terakhir: ${globalLatestCert || getLatestCertificateFromGrades()}`}
                               >
                                 <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                 </svg>
-                                <span>Sama ({getLatestCertificateFromGrades()})</span>
+                                <span>Sama ({globalLatestCert || getLatestCertificateFromGrades()})</span>
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setGrades({ ...grades, no_sertifikat: getNextCertificateNumber(getLatestCertificateFromGrades()) })}
+                                onClick={() => setGrades({ ...grades, no_sertifikat: globalNextCert || getNextCertificateNumber(globalLatestCert || getLatestCertificateFromGrades()) })}
                                 className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 border border-emerald-200/60 shadow-xs"
-                                title={`Gunakan nomor urut berikutnya: ${getNextCertificateNumber(getLatestCertificateFromGrades())}`}
+                                title={`Gunakan nomor urut berikutnya: ${globalNextCert || getNextCertificateNumber(globalLatestCert || getLatestCertificateFromGrades())}`}
                               >
                                 <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                                 </svg>
-                                <span>Urut (+1)</span>
+                                <span>+1 Baru ({globalNextCert || 'Otomatis'})</span>
                               </button>
                             </div>
                           )}
@@ -934,15 +959,15 @@ export default function PenilaianPage() {
                           value={(grades as any).no_sertifikat || ''}
                           onChange={(e) => setGrades({ ...grades, no_sertifikat: e.target.value })}
                           className="w-full px-4 py-2.5 text-base font-bold text-indigo-950 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
-                          placeholder="Masukkan Nomor Sertifikat"
+                          placeholder={globalNextCert ? `Contoh: ${globalNextCert}` : "Masukkan Nomor Sertifikat"}
                         />
-                        {getLatestCertificateFromGrades() && (
+                        {(globalLatestCert || getLatestCertificateFromGrades()) && (
                           <div className="flex items-center justify-between text-[11px] mt-2 px-0.5">
                             <span className="flex items-center gap-1 text-emerald-600 font-medium">
                               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
-                              Disinkronkan otomatis dari pengisian sebelumnya
+                              Tersinkronisasi otomatis lintas seluruh mentor di database MDU
                             </span>
                           </div>
                         )}

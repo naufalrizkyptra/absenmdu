@@ -155,7 +155,7 @@ export default function Login() {
                 <Image src="/logo-mdu.PNG" alt="MDU Logo" fill sizes="80px" className="object-contain p-1" priority />
               </div>
 
-              <p className="text-sm font-semibold text-white/90 mb-2 tracking-wide uppercase drop-shadow-md">Mandiri Digital Universe</p>
+              <p className="text-sm font-semibold text-white/90 mb-2 tracking-wide uppercase drop-shadow-md">PT Mandiri Digital Universe</p>
               <h1 className="text-3xl lg:text-4xl font-bold leading-[1.15] mb-4 tracking-tight drop-shadow-md">
                 Tumbuh Bersama,<br />Sukses Bersama.
               </h1>

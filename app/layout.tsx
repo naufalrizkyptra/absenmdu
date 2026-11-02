@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "MDU Portal | Absensi & Tugas",
-  description: "Portal resmi operasional magang (OJT) Mandiri Digital Universe.",
+  description: "Portal resmi operasional magang (OJT) PT Mandiri Digital Universe.",
   applicationName: "MDU Portal",
   appleWebApp: {
     capable: true,

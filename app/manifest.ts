@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'MDU Portal - Absensi & Tugas OJT',
+    name: 'MDU Portal - PT Mandiri Digital Universe',
     short_name: 'MDU Portal',
-    description: 'Portal resmi magang OJT Mandiri Digital Universe: Absensi, Jurnal Tugas, Izin, dan Penilaian.',
+    description: 'Portal resmi magang OJT PT Mandiri Digital Universe: Absensi, Jurnal Tugas, Izin, dan Penilaian.',
     start_url: '/',
     id: '/',
     display: 'standalone',

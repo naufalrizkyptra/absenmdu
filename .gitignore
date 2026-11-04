@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent scratch
+.superpowers/
+__pycache__/
+*.pyc

@@ -243,12 +243,12 @@ export default function DataOJTPage() {
       }
     } else {
       // SWAP MODE
-      if (!selectedSwapMenteeId) {
+      const swapMentee = targetMentor?.mentees?.find((m: any) => m.id === selectedSwapMenteeId)
+
+      if (!selectedSwapMenteeId || !swapMentee) {
         toast.error('Pilih peserta OJT rekanan yang ingin ditukar.')
         return
       }
-
-      const swapMentee = targetMentor?.mentees?.find((m: any) => m.id === selectedSwapMenteeId)
 
       const confirm = await Swal.fire({
         title: 'Tukar Anak OJT?',
@@ -981,7 +981,14 @@ export default function DataOJTPage() {
                 </button>
                 <button 
                   type="button"
-                  onClick={() => setTransferMode('swap')}
+                  onClick={() => {
+                    setTransferMode('swap')
+                    const targetMentor = otherMentorsList.find(m => m.id === selectedTargetMentorId)
+                    const targetMentees = targetMentor?.mentees || []
+                    if (!targetMentees.some((m: any) => m.id === selectedSwapMenteeId)) {
+                      setSelectedSwapMenteeId(targetMentees[0]?.id || '')
+                    }
+                  }}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all ${
                     transferMode === 'swap' 
                       ? 'bg-white text-purple-700 shadow-sm' 
@@ -1024,7 +1031,7 @@ export default function DataOJTPage() {
                         </label>
                         <select 
                           value={selectedTargetMentorId}
-                          onChange={(e) => setSelectedTargetMentorId(e.target.value)}
+                          onChange={(e) => handleTargetMentorChange(e.target.value)}
                           className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white shadow-inner"
                         >
                           {otherMentorsList.map((mentor) => (

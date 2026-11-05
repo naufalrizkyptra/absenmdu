@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import Swal from 'sweetalert2'
 import { LoadingMDU } from '@/components/LoadingMDU'
 
 export default function BerandaOJT() {
@@ -43,6 +44,25 @@ export default function BerandaOJT() {
     setIsDarkMode(nextTheme)
     localStorage.setItem('mdu_ojt_theme', nextTheme ? 'dark' : 'light')
     toast.success(nextTheme ? 'Mode Gelap diaktifkan' : 'Mode Terang diaktifkan')
+  }
+
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: 'Keluar Sesi?',
+      text: 'Apakah kamu yakin ingin keluar dari akun?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Keluar',
+      cancelButtonText: 'Batal',
+      background: isDarkMode ? '#131f3d' : '#ffffff',
+      color: isDarkMode ? '#ffffff' : '#1e293b',
+    })
+    if (result.isConfirmed) {
+      await supabase.auth.signOut()
+      router.push('/login')
+    }
   }
 
   useEffect(() => {
@@ -269,7 +289,7 @@ export default function BerandaOJT() {
               <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>
               Pengaturan Profil
             </button>
-            <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors">
+            <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors">
               <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
               Keluar Sesi
             </button>
@@ -340,6 +360,18 @@ export default function BerandaOJT() {
                       <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3 3h6a3 3 0 01-3 3z" />
                     </svg>
                     <span className="w-2 h-2 rounded-full bg-cyan-400 absolute top-1.5 right-1.5 ring-2 ring-[#16356c] animate-pulse"></span>
+                  </button>
+
+                  {/* Tombol Logout (Khusus Mobile) */}
+                  <button
+                    onClick={handleLogout}
+                    className="md:hidden w-8 h-8 rounded-full bg-rose-500/20 hover:bg-rose-500/35 active:scale-95 border border-rose-400/30 flex items-center justify-center text-rose-200 hover:text-white transition-all shadow-xs cursor-pointer"
+                    title="Keluar Sesi"
+                    aria-label="Keluar Sesi"
+                  >
+                    <svg className="w-4 h-4 text-rose-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                   </button>
                 </div>
               </div>

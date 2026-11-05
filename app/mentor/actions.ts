@@ -42,6 +42,7 @@ export async function createOJTAccount(formData: {
         nip: formData.nip, // Simpan NIP aslinya
         name: formData.name,
         role: 'ojt',
+        status_ojt: 'aktif',
         divisi: formData.divisi,
         asal_kantor: formData.asal_kantor,
         asal_sekolah: formData.asal_sekolah,
@@ -405,13 +406,22 @@ export async function transferOJTToMentor(ojtUserId: string, targetMentorId: str
       throw new Error("Mentor tujuan tidak valid atau tidak ditemukan.")
     }
 
-    // Update mentor_id pada anak OJT
+    // Update mentor_id pada anak OJT dan pastikan status_ojt aktif jika null
     const { error: updateErr } = await supabaseAdmin
       .from('users')
-      .update({ mentor_id: targetMentorId })
+      .update({ 
+        mentor_id: targetMentorId,
+        status_ojt: 'aktif'
+      })
       .eq('id', ojtUserId)
 
     if (updateErr) throw updateErr
+
+    // Sinkronkan juga mentor_id di tabel ojt_grades jika sudah ada penilaian
+    await supabaseAdmin
+      .from('ojt_grades')
+      .update({ mentor_id: targetMentorId })
+      .eq('user_id', ojtUserId)
 
     return { success: true, targetMentorName: targetMentor.name }
   } catch (error: any) {
@@ -431,7 +441,10 @@ export async function swapOJTMentors(
     // Update anak OJT 1 ke mentor baru
     const { error: err1 } = await supabaseAdmin
       .from('users')
-      .update({ mentor_id: targetMentorIdForOjt1 })
+      .update({ 
+        mentor_id: targetMentorIdForOjt1,
+        status_ojt: 'aktif'
+      })
       .eq('id', ojtId1)
 
     if (err1) throw err1
@@ -439,10 +452,24 @@ export async function swapOJTMentors(
     // Update anak OJT 2 ke mentor baru
     const { error: err2 } = await supabaseAdmin
       .from('users')
-      .update({ mentor_id: targetMentorIdForOjt2 })
+      .update({ 
+        mentor_id: targetMentorIdForOjt2,
+        status_ojt: 'aktif'
+      })
       .eq('id', ojtId2)
 
     if (err2) throw err2
+
+    // Sinkronkan juga mentor_id di tabel ojt_grades untuk kedua anak OJT jika sudah ada penilaian
+    await supabaseAdmin
+      .from('ojt_grades')
+      .update({ mentor_id: targetMentorIdForOjt1 })
+      .eq('user_id', ojtId1)
+
+    await supabaseAdmin
+      .from('ojt_grades')
+      .update({ mentor_id: targetMentorIdForOjt2 })
+      .eq('user_id', ojtId2)
 
     return { success: true }
   } catch (error: any) {
@@ -471,9 +498,9 @@ export async function getOtherMentorsWithMentees(currentMentorId: string) {
     if (mentorIds.length > 0) {
       const { data: mentees, error: menteesErr } = await supabaseAdmin
         .from('users')
-        .select('id, name, nip, divisi, mentor_id, asal_sekolah')
+        .select('id, name, nip, divisi, mentor_id, asal_sekolah, status_ojt')
         .eq('role', 'ojt')
-        .eq('status_ojt', 'aktif')
+        .or('status_ojt.eq.aktif,status_ojt.is.null')
         .in('mentor_id', mentorIds)
         .order('name', { ascending: true })
 

@@ -49,7 +49,7 @@ export default function MentorDashboard() {
         .select('*')
         .eq('mentor_id', user.id)
         .eq('role', 'ojt')
-        .eq('status_ojt', 'aktif') // Filter only active participants, exclude archived
+        .or('status_ojt.eq.aktif,status_ojt.is.null') // Filter only active participants, exclude archived
       if (teamData) setMentees(teamData)
 
       setLoading(false)

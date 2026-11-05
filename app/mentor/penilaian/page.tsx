@@ -64,7 +64,10 @@ export default function PenilaianPage() {
       .eq('role', 'ojt')
     if (teamData) setMentees(teamData)
 
-    const { data: existingGrades } = await supabase.from('ojt_grades').select('*').eq('mentor_id', user.id)
+    const menteeIds = (teamData || []).map(m => m.id)
+    const { data: existingGrades } = menteeIds.length > 0 
+      ? await supabase.from('ojt_grades').select('*').in('user_id', menteeIds)
+      : { data: [] }
     if (existingGrades) setGradesData(existingGrades)
 
     // AMBIL NOMOR SERTIFIKAT TERBARU LINTAS SELURUH MENTOR

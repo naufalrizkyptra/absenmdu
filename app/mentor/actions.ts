@@ -580,3 +580,163 @@ export async function getGlobalLatestCertificate() {
     return { success: false, message: error.message, latestCert: '', nextCert: '', highestNum: 0 }
   }
 }
+
+// 12. FUNGSI BROADCAST PENGUMUMAN TIM (ANNOUNCEMENTS)
+export interface AnnouncementItem {
+  id: string
+  created_at: string
+  mentor_id: string
+  title: string
+  content: string
+  category: 'info' | 'penting' | 'evaluasi'
+  is_active: boolean
+}
+
+export async function createAnnouncement(payload: {
+  mentor_id: string
+  title: string
+  content: string
+  category?: 'info' | 'penting' | 'evaluasi'
+}) {
+  try {
+    if (!payload.mentor_id || !payload.title?.trim() || !payload.content?.trim()) {
+      return { success: false, message: 'Judul dan isi pengumuman wajib diisi.' }
+    }
+
+    const newItem: AnnouncementItem = {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      mentor_id: payload.mentor_id,
+      title: payload.title.trim(),
+      content: payload.content.trim(),
+      category: payload.category || 'info',
+      is_active: true
+    }
+
+    // 1. Coba simpan ke tabel relational 'announcements' jika ada
+    const { error: tblErr } = await supabaseAdmin
+      .from('announcements')
+      .insert([newItem])
+
+    if (!tblErr) {
+      return { success: true, item: newItem }
+    }
+
+    // 2. Fallback: jika tabel belum dimigrasi di schema cache, simpan ke metadata auth mentor
+    const { data: userAuth, error: authErr } = await supabaseAdmin.auth.admin.getUserById(payload.mentor_id)
+    if (authErr) throw authErr
+
+    const currentList: AnnouncementItem[] = userAuth.user.user_metadata?.announcements || []
+    const updatedList = [newItem, ...currentList]
+
+    await supabaseAdmin.auth.admin.updateUserById(payload.mentor_id, {
+      user_metadata: {
+        ...userAuth.user.user_metadata,
+        announcements: updatedList
+      }
+    })
+
+    return { success: true, item: newItem }
+  } catch (err: any) {
+    console.error('Error createAnnouncement:', err)
+    return { success: false, message: err.message }
+  }
+}
+
+export async function getMentorAnnouncements(mentorId: string) {
+  try {
+    if (!mentorId) return { success: false, announcements: [] }
+
+    // 1. Coba ambil dari tabel announcements
+    const { data, error } = await supabaseAdmin
+      .from('announcements')
+      .select('*')
+      .eq('mentor_id', mentorId)
+      .order('created_at', { ascending: false })
+
+    if (!error && data) {
+      return { success: true, announcements: data as AnnouncementItem[] }
+    }
+
+    // 2. Fallback ambil dari user_metadata
+    const { data: userAuth, error: authErr } = await supabaseAdmin.auth.admin.getUserById(mentorId)
+    if (authErr) throw authErr
+
+    const list: AnnouncementItem[] = userAuth.user.user_metadata?.announcements || []
+    return { success: true, announcements: list }
+  } catch (err: any) {
+    console.error('Error getMentorAnnouncements:', err)
+    return { success: false, message: err.message, announcements: [] }
+  }
+}
+
+export async function getActiveAnnouncementForOJT(mentorId: string) {
+  try {
+    if (!mentorId) return { success: true, announcement: null }
+
+    const res = await getMentorAnnouncements(mentorId)
+    if (!res.success) return { success: false, announcement: null }
+
+    const activeList = (res.announcements || []).filter(a => a.is_active)
+    const latest = activeList.length > 0 ? activeList[0] : null
+
+    return { success: true, announcement: latest }
+  } catch (err: any) {
+    console.error('Error getActiveAnnouncementForOJT:', err)
+    return { success: false, message: err.message, announcement: null }
+  }
+}
+
+export async function toggleAnnouncementStatus(announcementId: string, mentorId: string, isActive: boolean) {
+  try {
+    // 1. Coba update tabel
+    const { error: tblErr } = await supabaseAdmin
+      .from('announcements')
+      .update({ is_active: isActive })
+      .eq('id', announcementId)
+
+    if (!tblErr) return { success: true }
+
+    // 2. Fallback update metadata
+    const { data: userAuth, error: authErr } = await supabaseAdmin.auth.admin.getUserById(mentorId)
+    if (authErr) throw authErr
+
+    const currentList: AnnouncementItem[] = userAuth.user.user_metadata?.announcements || []
+    const updatedList = currentList.map(a => a.id === announcementId ? { ...a, is_active: isActive } : a)
+
+    await supabaseAdmin.auth.admin.updateUserById(mentorId, {
+      user_metadata: { ...userAuth.user.user_metadata, announcements: updatedList }
+    })
+
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, message: err.message }
+  }
+}
+
+export async function deleteAnnouncement(announcementId: string, mentorId: string) {
+  try {
+    // 1. Coba delete dari tabel
+    const { error: tblErr } = await supabaseAdmin
+      .from('announcements')
+      .delete()
+      .eq('id', announcementId)
+
+    if (!tblErr) return { success: true }
+
+    // 2. Fallback delete dari metadata
+    const { data: userAuth, error: authErr } = await supabaseAdmin.auth.admin.getUserById(mentorId)
+    if (authErr) throw authErr
+
+    const currentList: AnnouncementItem[] = userAuth.user.user_metadata?.announcements || []
+    const updatedList = currentList.filter(a => a.id !== announcementId)
+
+    await supabaseAdmin.auth.admin.updateUserById(mentorId, {
+      user_metadata: { ...userAuth.user.user_metadata, announcements: updatedList }
+    })
+
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, message: err.message }
+  }
+}

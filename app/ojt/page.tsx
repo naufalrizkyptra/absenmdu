@@ -624,7 +624,7 @@ export default function BerandaOJT() {
             ========================================= */}
           {activeAnnouncement && (
             <div className="max-w-6xl xl:max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 mt-5">
-              <div className={`p-5 rounded-3xl border shadow-md relative overflow-hidden transition-all ${
+              <div className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border shadow-md relative overflow-hidden transition-all ${
                 isDarkMode 
                   ? 'bg-gradient-to-r from-[#17203d] to-[#1d2b50] border-indigo-500/30 text-white' 
                   : 'bg-white border-2 border-indigo-100 shadow-indigo-100/40 text-slate-900'
@@ -638,10 +638,10 @@ export default function BerandaOJT() {
                     : 'bg-indigo-600'
                 }`} />
 
-                <div className="pl-2">
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                <div className="pl-1.5 sm:pl-2">
+                  <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
                         activeAnnouncement.category === 'penting'
                           ? 'bg-rose-500 text-white shadow-xs'
                           : activeAnnouncement.category === 'evaluasi'
@@ -652,14 +652,15 @@ export default function BerandaOJT() {
                           ? 'Penting'
                           : activeAnnouncement.category === 'evaluasi'
                           ? 'Evaluasi'
-                          : 'Info Tim'}
+                          : 'Info'}
                       </span>
-                      <span className={`text-[11px] font-bold ${isDarkMode ? 'text-indigo-300' : 'text-indigo-700'}`}>
+                      <span className={`text-[10px] sm:text-[11px] font-bold truncate ${isDarkMode ? 'text-indigo-300' : 'text-indigo-700'}`} title={`Instruksi Mentor ${mentorName}`}>
                         Instruksi Mentor {mentorName}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[11px] font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`text-[10px] font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                         {new Date(activeAnnouncement.created_at).toLocaleDateString('id-ID', {
                           day: 'numeric',
                           month: 'short',
@@ -682,14 +683,14 @@ export default function BerandaOJT() {
                         title="Tutup / Sembunyikan Pengumuman"
                         aria-label="Tutup Pengumuman"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     </div>
                   </div>
 
-                  <h3 className={`font-black text-base mb-1 tracking-tight ${
+                  <h3 className={`font-black text-sm sm:text-base mb-1 tracking-tight ${
                     isDarkMode ? 'text-white' : 'text-slate-900'
                   }`}>
                     {activeAnnouncement.title}

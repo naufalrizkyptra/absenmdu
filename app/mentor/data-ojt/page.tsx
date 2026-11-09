@@ -582,9 +582,128 @@ export default function DataOJTPage() {
                 </div>
               </div>
 
-              {/* AREA TABEL */}
-              <div className="p-0 overflow-x-auto custom-scrollbar">
-                <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
+              {/* AREA TABEL & MOBILE CARD VIEW */}
+              <div className="p-0 custom-scrollbar">
+
+                {/* 1. TAMPILAN MOBILE (CARD VIEW) */}
+                <div className="block md:hidden p-4 space-y-3.5 bg-slate-50/50">
+                  {filteredMentees.length === 0 ? (
+                    <div className="p-10 text-center bg-white rounded-2xl border border-slate-100">
+                      <p className="text-sm font-bold text-slate-600">Tidak Ada Data</p>
+                      <p className="text-xs text-slate-400 mt-1">Pencarian "{searchQuery}" tidak ditemukan.</p>
+                    </div>
+                  ) : (
+                    filteredMentees.map((m) => {
+                      const remainingDays = calculateRemainingDays(m.end_period)
+                      const isEndingSoon = remainingDays !== null && remainingDays >= 0 && remainingDays <= 7
+                      const isFinished = remainingDays !== null && remainingDays < 0
+
+                      return (
+                        <div
+                          key={`mob-data-${m.id}`}
+                          className={`p-4 rounded-2xl bg-white border shadow-xs flex flex-col gap-3 transition-all ${
+                            isEndingSoon ? 'border-amber-200/80 bg-amber-50/20' : 'border-slate-100'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-sm text-slate-900 truncate">{m.name}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5 text-xs">
+                                <span className="font-semibold text-slate-400">{m.nip || 'Belum Ada NIP'}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="font-bold text-indigo-600">{m.divisi}</span>
+                              </div>
+                            </div>
+                            {isEndingSoon && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                Sisa {remainingDays} Hari
+                              </span>
+                            )}
+                            {isFinished && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                Selesai
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Institusi</span>
+                              <span className="font-bold text-slate-700 truncate block">{m.asal_sekolah || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Penempatan</span>
+                              <span className="font-bold text-slate-700 truncate block">{m.asal_kantor || '-'}</span>
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-slate-500 font-medium">
+                            <span>Periode: </span>
+                            <span className="font-bold text-slate-700">
+                              {m.start_period ? formatDate(m.start_period) : '-'} s.d. {m.end_period ? formatDate(m.end_period) : '-'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => setEditingUser(m)}
+                              className="flex-1 py-2 px-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all flex items-center justify-center gap-1"
+                            >
+                              <span>Edit</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => openResetModal(m.id, m.name)}
+                              className="flex-1 py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1"
+                            >
+                              <span>Reset</span>
+                            </button>
+
+                            {tab === 'aktif' && (
+                              <button
+                                type="button"
+                                onClick={() => openTransferSwapModal(m)}
+                                className="py-2 px-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition-all flex items-center justify-center gap-1"
+                                title="Pindah / Tukar Mentor"
+                              >
+                                <span>Tukar</span>
+                              </button>
+                            )}
+
+                            {tab === 'aktif' && (
+                              <button
+                                type="button"
+                                onClick={() => handleArchiveOJT(m.id, m.name)}
+                                className="py-2 px-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all flex items-center justify-center gap-1"
+                                title="Arsipkan"
+                              >
+                                <span>Arsip</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOJT(m.id, m.name)}
+                              className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all flex items-center justify-center"
+                              title="Hapus Permanen"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {/* 2. TAMPILAN DESKTOP (TABEL) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                   <thead>
                     <tr className="bg-slate-50/50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
                       <th className="p-4 pl-6">NIP & Identitas</th>
@@ -705,7 +824,8 @@ export default function DataOJTPage() {
               </div>
             </div>
           </div>
-        </main>
+        </div>
+      </main>
 
         {/* =========================================
           MODAL TAMBAH DATA (DI-MAKEOVER)

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
 import Swal from 'sweetalert2'
 import { LoadingMDU } from '@/components/LoadingMDU'
+import { getActiveAnnouncementForOJT } from '../mentor/actions'
 
 export default function BerandaOJT() {
   const [user, setUser] = useState<any>(null)
@@ -23,6 +24,8 @@ export default function BerandaOJT() {
   const [showMentorModal, setShowMentorModal] = useState(false)
   const [showJurnalModal, setShowJurnalModal] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [activeAnnouncement, setActiveAnnouncement] = useState<any>(null)
+  const [notifPermission, setNotifPermission] = useState<string>('default')
   const router = useRouter()
 
   useEffect(() => {
@@ -37,7 +40,38 @@ export default function BerandaOJT() {
     if (savedTheme === 'dark') {
       setIsDarkMode(true)
     }
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifPermission(Notification.permission)
+    }
   }, [])
+
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const perm = await Notification.requestPermission()
+        setNotifPermission(perm)
+        if (perm === 'granted') {
+          toast.success('Pengingat absen otomatis berhasil diaktifkan!')
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'SHOW_NOTIFICATION',
+              title: 'Pengingat Absen MDU Aktif',
+              options: {
+                body: 'Sistem akan mengingatkan Anda saat jam masuk (08.00) dan jam pulang (15.00 WIB).',
+                data: { url: '/ojt/absen' }
+              }
+            })
+          }
+        } else if (perm === 'denied') {
+          toast.error('Izin notifikasi ditolak di browser Anda.')
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      toast.error('Perangkat Anda tidak mendukung Web Notification.')
+    }
+  }
 
   const toggleTheme = () => {
     const nextTheme = !isDarkMode
@@ -96,6 +130,12 @@ export default function BerandaOJT() {
             setMentorName(mentorData.name)
           } else {
             setMentorName('Belum Ditugaskan')
+          }
+
+          // Tarik Pengumuman Aktif dari Mentor
+          const annRes = await getActiveAnnouncementForOJT(userData.mentor_id)
+          if (annRes.success && annRes.announcement) {
+            setActiveAnnouncement(annRes.announcement)
           }
         } else {
           setMentorName('Belum Ditugaskan')
@@ -490,6 +530,142 @@ export default function BerandaOJT() {
 
             </div>
           </div>
+
+          {/* =========================================
+            BANNER PENGINGAT ABSEN (PAGI & PULANG 15.00 WIB)
+            ========================================= */}
+          {(() => {
+            const nowH = currentTime ? currentTime.getHours() : new Date().getHours()
+            const nowM = currentTime ? currentTime.getMinutes() : new Date().getMinutes()
+            const isMorning = (nowH === 7 && nowM >= 45) || nowH === 8 || (nowH === 9 && nowM <= 0)
+            const showMorning = isMorning && !todayRecord?.check_in_time
+            const isAfternoon = nowH >= 15
+            const showAfternoon = isAfternoon && Boolean(todayRecord?.check_in_time) && !todayRecord?.check_out_time
+
+            if (!showMorning && !showAfternoon && notifPermission === 'granted') return null
+
+            return (
+              <div className="max-w-6xl xl:max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 mt-5 space-y-3">
+                {/* 1. Pengingat Masuk Pagi */}
+                {showMorning && (
+                  <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 text-white animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-sm tracking-tight">Waktunya Presensi Masuk!</p>
+                        <p className="text-xs text-amber-100 mt-0.5">Jam masuk standar telah dimulai (08.00 WIB). Jangan lupa check-in sekarang.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/ojt/absen')}
+                      className="px-4 py-2.5 rounded-xl bg-white text-amber-900 font-extrabold text-xs shadow-md hover:bg-amber-50 transition-all shrink-0 cursor-pointer active:scale-95"
+                    >
+                      Check-In Sekarang
+                    </button>
+                  </div>
+                )}
+
+                {/* 2. Pengingat Pulang Sore (Tepat Jam 15.00 WIB) */}
+                {showAfternoon && (
+                  <div className="p-4 rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg shadow-emerald-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-sm tracking-tight">Jam Kerja Selesai (15.00 WIB)!</p>
+                        <p className="text-xs text-emerald-100 mt-0.5">Anda sudah dapat melakukan presensi pulang sebelum meninggalkan kantor.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/ojt/absen')}
+                      className="px-4 py-2.5 rounded-xl bg-white text-emerald-900 font-extrabold text-xs shadow-md hover:bg-emerald-50 transition-all shrink-0 cursor-pointer active:scale-95"
+                    >
+                      Check-Out Sekarang
+                    </button>
+                  </div>
+                )}
+
+                {/* 3. Permintaan Izin Notifikasi Web/PWA */}
+                {notifPermission !== 'granted' && (
+                  <div className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs ${
+                    isDarkMode ? 'bg-[#152449] border-blue-500/30 text-blue-200' : 'bg-blue-50/70 border-blue-200/80 text-blue-900'
+                  }`}>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-base">🔔</span>
+                      <span className="font-medium">Ingin diingatkan otomatis di HP saat jam masuk (08.00) dan pulang (15.00 WIB)?</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={requestNotificationPermission}
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shrink-0 transition-all shadow-xs cursor-pointer active:scale-95"
+                    >
+                      Aktifkan
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* =========================================
+            PAPAN PENGUMUMAN DARI MENTOR (HERO BANNER)
+            ========================================= */}
+          {activeAnnouncement && (
+            <div className="max-w-6xl xl:max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 mt-5">
+              <div className={`p-5 rounded-3xl border shadow-md relative overflow-hidden transition-all ${
+                isDarkMode 
+                  ? 'bg-gradient-to-r from-[#17203d] to-[#1d2b50] border-indigo-500/30 text-white' 
+                  : 'bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 border-indigo-200/70 text-slate-900'
+              }`}>
+                <div className="flex items-start justify-between gap-3 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                      activeAnnouncement.category === 'penting'
+                        ? 'bg-rose-500 text-white shadow-xs'
+                        : activeAnnouncement.category === 'evaluasi'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-indigo-600 text-white shadow-xs'
+                    }`}>
+                      {activeAnnouncement.category === 'penting'
+                        ? 'Penting'
+                        : activeAnnouncement.category === 'evaluasi'
+                        ? 'Evaluasi'
+                        : 'Info Tim'}
+                    </span>
+                    <span className={`text-[11px] font-bold ${isDarkMode ? 'text-indigo-300' : 'text-indigo-700'}`}>
+                      Instruksi Mentor {mentorName}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">
+                    {new Date(activeAnnouncement.created_at).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+
+                <h3 className="font-extrabold text-base mb-1 tracking-tight text-indigo-950 dark:text-white">
+                  {activeAnnouncement.title}
+                </h3>
+                <p className={`text-xs whitespace-pre-line leading-relaxed ${
+                  isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                }`}>
+                  {activeAnnouncement.content}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* =========================================
             MENU UTAMA (GRID 8 SQUIRCLE ICONS MODERN)

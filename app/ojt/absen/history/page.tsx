@@ -68,34 +68,84 @@ export default function AttendanceHistory() {
           ) : (
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
               {history.length === 0 ? (
-                <p className="text-center text-slate-400">Tidak ada catatan presensi.</p>
+                <div className="py-12 text-center">
+                  <div className="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-bold text-slate-700">Belum Ada Riwayat Presensi</p>
+                  <p className="text-xs text-slate-400 mt-1">Catatan absensi harian Anda akan ditampilkan di sini.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {history.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/50 border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold
-                          ${item.status === 'Terlambat' ? 'bg-red-50 text-red-500' : item.check_out_time ? 'bg-emerald-50 text-emerald-500' : 'bg-blue-50 text-blue-600'}`}
-                        >
-                          {item.check_out_time ? (
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                          ) : (
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                          )}
+                  {history.map((item) => {
+                    const isLate = item.status === 'Terlambat';
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:border-indigo-100 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-bold ${
+                              isLate
+                                ? 'bg-rose-50 text-rose-500 border border-rose-100'
+                                : item.check_out_time
+                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                            }`}
+                          >
+                            {item.check_out_time ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-800">{formatDate(item.check_in_time)}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                                  isLate ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                                }`}
+                              >
+                                {item.status || 'Hadir'}
+                              </span>
+                              {!item.check_out_time && (
+                                <span className="text-[11px] text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  Belum Checkout (15.00 WIB)
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-slate-800 truncate">{formatDate(item.check_in_time)}</p>
-                          <p className={`text-xs font-semibold ${item.status === 'Terlambat' ? 'text-red-500' : 'text-slate-500'}`}>{item.status}</p>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                          <div className="text-left sm:text-right">
+                            <p className="text-[11px] text-slate-400 font-medium">Jam Masuk</p>
+                            <p className={`text-xs font-bold ${isLate ? 'text-rose-600' : 'text-slate-800'}`}>
+                              {formatTime(item.check_in_time)} WIB
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[11px] text-slate-400 font-medium">Jam Pulang</p>
+                            {item.check_out_time ? (
+                              <p className="text-xs font-bold text-emerald-600">
+                                {formatTime(item.check_out_time)} WIB
+                              </p>
+                            ) : (
+                              <p className="text-xs font-semibold text-slate-400">-</p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-slate-400 font-medium">Masuk: <span className={`font-bold ${item.status === 'Terlambat' ? 'text-red-500' : 'text-slate-800'}`}>{formatTime(item.check_in_time)}</span></p>
-                        {item.check_out_time && (
-                          <p className="text-xs text-slate-400 font-medium">Pulang: <span className="text-emerald-600 font-bold">{formatTime(item.check_out_time)}</span></p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

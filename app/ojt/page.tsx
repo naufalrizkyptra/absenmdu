@@ -132,10 +132,13 @@ export default function BerandaOJT() {
             setMentorName('Belum Ditugaskan')
           }
 
-          // Tarik Pengumuman Aktif dari Mentor
+          // Tarik Pengumuman Aktif dari Mentor (Cek apakah sudah pernah di-dismiss oleh OJT ini)
           const annRes = await getActiveAnnouncementForOJT(userData.mentor_id)
           if (annRes.success && annRes.announcement) {
-            setActiveAnnouncement(annRes.announcement)
+            const dismissedId = localStorage.getItem(`mdu_dismissed_announce_${user.id}`)
+            if (dismissedId !== annRes.announcement.id) {
+              setActiveAnnouncement(annRes.announcement)
+            }
           }
         } else {
           setMentorName('Belum Ditugaskan')
@@ -655,14 +658,35 @@ export default function BerandaOJT() {
                         Instruksi Mentor {mentorName}
                       </span>
                     </div>
-                    <span className={`text-[11px] font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {new Date(activeAnnouncement.created_at).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[11px] font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {new Date(activeAnnouncement.created_at).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const id = activeAnnouncement.id
+                          setActiveAnnouncement(null)
+                          if (typeof window !== 'undefined' && user?.id) {
+                            localStorage.setItem(`mdu_dismissed_announce_${user.id}`, id)
+                          }
+                        }}
+                        className={`p-1 rounded-lg transition-all cursor-pointer ${
+                          isDarkMode ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'
+                        }`}
+                        title="Tutup / Sembunyikan Pengumuman"
+                        aria-label="Tutup Pengumuman"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   <h3 className={`font-black text-base mb-1 tracking-tight ${

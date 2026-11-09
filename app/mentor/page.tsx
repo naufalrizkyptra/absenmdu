@@ -356,6 +356,18 @@ export default function MentorDashboard() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
+  // Helper cek apakah mentee masih aktif magang (belum lewat end_period & bukan status selesai)
+  const isMenteeActive = (m: any) => {
+    if (m.status_ojt && m.status_ojt !== 'aktif') return false
+    if (m.end_period) {
+      const days = calculateRemainingDays(m.end_period)
+      if (days !== null && days < 0) return false
+    }
+    return true
+  }
+
+  const activeMentees = mentees.filter(isMenteeActive)
+
   const isToday = selectedDate === new Date().toLocaleDateString('en-CA')
   const now = new Date()
   const isPastMorningCheck = (now.getHours() > 8) || (now.getHours() === 8 && now.getMinutes() >= 15)
@@ -363,18 +375,27 @@ export default function MentorDashboard() {
   const attendedUserIds = new Set((attendances || []).map(a => a.user_id))
   const izinUserIds = new Set((izinList || []).map(i => i.user_id))
 
-  // 1. Belum Hadir Hari Ini (jam > 08.15 & belum absen/izin)
+  // 1. Belum Hadir Hari Ini (jam > 08.15 & belum absen/izin & HANYA untuk peserta magang aktif)
   const absentTodayList = isToday && isPastMorningCheck
-    ? mentees.filter(m => !attendedUserIds.has(m.id) && !izinUserIds.has(m.id))
+    ? activeMentees.filter(m => !attendedUserIds.has(m.id) && !izinUserIds.has(m.id))
     : []
 
-  // 2. Sering Terlambat (>= 3 kali dalam 30 hari terakhir)
-  const frequentLateList = mentees.filter(m => (lateCounts[m.id] || 0) >= 3)
+  // 2. Sering Terlambat (>= 3 kali dalam 30 hari terakhir & HANYA untuk peserta magang aktif)
+  const frequentLateList = activeMentees.filter(m => (lateCounts[m.id] || 0) >= 3)
 
-  // 3. Sisa Masa Magang <= 7 hari
-  const endingSoonList = mentees.filter(m => {
+  // 3. Sisa Masa Magang <= 7 hari (dan >= 0 hari & status aktif)
+  const endingSoonList = activeMentees.filter(m => {
     const days = calculateRemainingDays(m.end_period)
     return days !== null && days >= 0 && days <= 7
+  })
+
+  // Daftar peserta yang ditampilkan di tabel presensi:
+  // Seluruh peserta aktif, atau peserta selesai yang tercatat absensi/izin pada tanggal yang dipilih
+  const displayMentees = mentees.filter(m => {
+    if (isMenteeActive(m)) return true
+    const hasAbsen = attendances.some(a => a.user_id === m.id)
+    const hasIzin = izinList.some(i => i.user_id === m.id)
+    return hasAbsen || hasIzin
   })
 
   const activeAnnouncements = announcements.filter(a => a.is_active)
@@ -590,8 +611,8 @@ export default function MentorDashboard() {
             {/* STATS SUMMARY CARD */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
               <div className="bg-white p-5 rounded-3xl shadow-xl border border-slate-100 flex flex-col items-center justify-center text-center">
-                <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Total Tim</p>
-                <p className="text-3xl font-black text-slate-800">{mentees.length}</p>
+                <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Total Tim Aktif</p>
+                <p className="text-3xl font-black text-slate-800">{activeMentees.length}</p>
               </div>
               <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 p-5 rounded-3xl shadow-lg shadow-emerald-500/20 text-white flex flex-col items-center justify-center text-center">
                 <p className="text-emerald-100 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Kehadiran</p>
@@ -599,7 +620,7 @@ export default function MentorDashboard() {
               </div>
               <div className="bg-white p-5 rounded-3xl shadow-xl border border-rose-100 flex flex-col items-center justify-center text-center">
                 <p className="text-rose-400 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Alpa / Izin</p>
-                <p className="text-3xl font-black text-rose-600">{mentees.length - attendances.length}</p>
+                <p className="text-3xl font-black text-rose-600">{Math.max(0, activeMentees.length - attendances.length)}</p>
               </div>
               <div className="bg-white p-5 rounded-3xl shadow-xl border border-amber-100 flex flex-col items-center justify-center text-center">
                 <p className="text-amber-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Terlambat</p>
@@ -648,14 +669,14 @@ export default function MentorDashboard() {
 
             {/* PERINGATAN DINI TIM (EARLY WARNING SYSTEM) */}
             {hasEarlyWarnings && (
-              <div className="mb-6 bg-white p-5 md:p-6 rounded-3xl shadow-xl border border-slate-100">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-3 w-3 relative">
+              <div className="mb-6 bg-white p-4 sm:p-5 rounded-3xl shadow-lg border border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3.5 pb-2.5 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2.5 w-2.5 relative">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
                     </span>
-                    <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
+                    <h3 className="text-sm font-extrabold text-slate-800 tracking-tight">
                       Pantauan Khusus & Peringatan Dini Tim
                     </h3>
                   </div>
@@ -665,7 +686,7 @@ export default function MentorDashboard() {
                     <button
                       type="button"
                       onClick={() => setWarningFilter('all')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
                         warningFilter === 'all'
                           ? 'bg-slate-800 text-white shadow-xs'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -677,7 +698,7 @@ export default function MentorDashboard() {
                       <button
                         type="button"
                         onClick={() => setWarningFilter('absent')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 ${
                           warningFilter === 'absent'
                             ? 'bg-rose-600 text-white shadow-xs'
                             : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
@@ -691,7 +712,7 @@ export default function MentorDashboard() {
                       <button
                         type="button"
                         onClick={() => setWarningFilter('late')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 ${
                           warningFilter === 'late'
                             ? 'bg-amber-500 text-white shadow-xs'
                             : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
@@ -705,7 +726,7 @@ export default function MentorDashboard() {
                       <button
                         type="button"
                         onClick={() => setWarningFilter('ending')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 ${
                           warningFilter === 'ending'
                             ? 'bg-indigo-600 text-white shadow-xs'
                             : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
@@ -719,23 +740,25 @@ export default function MentorDashboard() {
                 </div>
 
                 {/* Grid Kartu Peserta Peringatan Dini */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   {/* 1. Belum Hadir Hari Ini */}
                   {(warningFilter === 'all' || warningFilter === 'absent') &&
                     absentTodayList.map(m => (
                       <div
                         key={`absent-${m.id}`}
-                        className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-100 flex items-center justify-between gap-3 shadow-xs hover:border-rose-300 transition-all"
+                        className="p-3 rounded-2xl bg-rose-50/70 border border-rose-100 flex items-center justify-between gap-2.5 shadow-xs hover:border-rose-300 transition-all min-w-0"
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-rose-600 text-white">
+                          <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
+                            <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-rose-600 text-white leading-none">
                               Belum Hadir
                             </span>
-                            <span className="text-[11px] text-rose-500 font-semibold">{m.divisi}</span>
+                            <span className="text-[10px] text-rose-700/90 font-semibold truncate" title={m.divisi}>
+                              {m.divisi}
+                            </span>
                           </div>
-                          <p className="text-sm font-bold text-slate-800 truncate">{m.name}</p>
-                          <p className="text-xs text-slate-400 mt-0.5 truncate">{m.asal_sekolah || '-'}</p>
+                          <p className="text-xs font-bold text-slate-800 truncate" title={m.name}>{m.name}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.asal_sekolah || '-'}</p>
                         </div>
                         {m.no_telp && (
                           <a
@@ -744,7 +767,7 @@ export default function MentorDashboard() {
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-xs transition-all active:scale-95"
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shrink-0 shadow-xs transition-all active:scale-95"
                             title="Ingatkan via WhatsApp"
                           >
                             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
@@ -759,24 +782,26 @@ export default function MentorDashboard() {
                     frequentLateList.map(m => (
                       <div
                         key={`late-${m.id}`}
-                        className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-100 flex items-center justify-between gap-3 shadow-xs hover:border-amber-300 transition-all"
+                        className="p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex items-center justify-between gap-2.5 shadow-xs hover:border-amber-300 transition-all min-w-0"
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-amber-500 text-white">
+                          <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
+                            <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white leading-none">
                               {lateCounts[m.id] || 0}x Terlambat
                             </span>
-                            <span className="text-[11px] text-amber-600 font-semibold">{m.divisi}</span>
+                            <span className="text-[10px] text-amber-700/90 font-semibold truncate" title={m.divisi}>
+                              {m.divisi}
+                            </span>
                           </div>
-                          <p className="text-sm font-bold text-slate-800 truncate">{m.name}</p>
-                          <p className="text-xs text-slate-400 mt-0.5 truncate">{m.nip || '-'}</p>
+                          <p className="text-xs font-bold text-slate-800 truncate" title={m.name}>{m.name}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.nip || '-'}</p>
                         </div>
                         {m.no_telp && (
                           <a
                             href={`https://wa.me/${m.no_telp.replace(/^0/, '62')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-xs flex items-center gap-1 shrink-0 transition-all"
+                            className="px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-[11px] flex items-center gap-1 shrink-0 transition-all active:scale-95"
                             title="Hubungi WhatsApp"
                           >
                             <span>Kontak</span>
@@ -792,22 +817,24 @@ export default function MentorDashboard() {
                       return (
                         <div
                           key={`ending-${m.id}`}
-                          className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between gap-3 shadow-xs hover:border-indigo-300 transition-all"
+                          className="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between gap-2.5 shadow-xs hover:border-indigo-300 transition-all min-w-0"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-indigo-600 text-white">
+                            <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
+                              <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-600 text-white leading-none">
                                 Sisa {days} Hari
                               </span>
-                              <span className="text-[11px] text-indigo-600 font-semibold">{m.divisi}</span>
+                              <span className="text-[10px] text-indigo-700/90 font-semibold truncate" title={m.divisi}>
+                                {m.divisi}
+                              </span>
                             </div>
-                            <p className="text-sm font-bold text-slate-800 truncate">{m.name}</p>
-                            <p className="text-xs text-slate-400 mt-0.5 truncate">{m.asal_sekolah || '-'}</p>
+                            <p className="text-xs font-bold text-slate-800 truncate" title={m.name}>{m.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.asal_sekolah || '-'}</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => router.push('/mentor/penilaian')}
-                            className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shrink-0 shadow-xs transition-all active:scale-95"
+                            className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shrink-0 shadow-xs transition-all active:scale-95"
                           >
                             Rapor Nilai
                           </button>
@@ -865,10 +892,11 @@ export default function MentorDashboard() {
                   <>
                     {/* 1. TAMPILAN MOBILE (CARD VIEW) */}
                     <div className="block md:hidden p-4 space-y-3 bg-slate-50/50">
-                      {mentees.map((m) => {
+                      {displayMentees.map((m) => {
                         const absenHariIni = attendances.find(a => a.user_id === m.id)
                         const izinHariIni = izinList.find(i => i.user_id === m.id)
                         const isTugasKhusus = absenHariIni?.status?.includes('Tugas') || absenHariIni?.status?.includes('Event') || izinHariIni?.bukti_link
+                        const isActive = isMenteeActive(m)
 
                         return (
                           <div
@@ -879,7 +907,14 @@ export default function MentorDashboard() {
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0 flex-1">
-                                <p className="font-bold text-sm text-slate-900 truncate">{m.name}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-bold text-sm text-slate-900 truncate">{m.name}</p>
+                                  {!isActive && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-500 shrink-0">
+                                      Selesai
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">
                                   {m.nip || '-'} • <span className="text-indigo-600 font-bold">{m.divisi}</span>
                                 </p>
@@ -983,17 +1018,24 @@ export default function MentorDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {mentees.map((m) => {
+                      {displayMentees.map((m) => {
                         const absenHariIni = attendances.find(a => a.user_id === m.id)
                         const izinHariIni = izinList.find(i => i.user_id === m.id)
-
                         const isTugasKhusus = absenHariIni?.status?.includes('Tugas') || absenHariIni?.status?.includes('Event') || izinHariIni?.bukti_link
+                        const isActive = isMenteeActive(m)
 
                         return (
                           <tr key={m.id} className={`transition-colors hover:bg-slate-50/50 ${!absenHariIni ? 'bg-rose-50/20' : ''}`}>
 
                             <td className="p-4 pl-6">
-                              <div className="font-bold text-slate-800">{m.name}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-800">{m.name}</span>
+                                {!isActive && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-500">
+                                    Selesai
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-xs font-semibold text-slate-400 mt-0.5">{m.nip || '-'} • <span className="text-indigo-600">{m.divisi}</span></div>
                             </td>
 

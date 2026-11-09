@@ -608,10 +608,10 @@ export default function DataOJTPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-sm text-slate-900 truncate">{m.name}</p>
-                              <div className="flex items-center gap-1.5 mt-0.5 text-xs">
-                                <span className="font-semibold text-slate-400">{m.nip || 'Belum Ada NIP'}</span>
-                                <span className="text-slate-300">•</span>
-                                <span className="font-bold text-indigo-600">{m.divisi}</span>
+                              <div className="flex items-center gap-1.5 mt-0.5 text-xs min-w-0">
+                                <span className="font-semibold text-slate-400 shrink-0">{m.nip || 'Belum Ada NIP'}</span>
+                                <span className="text-slate-300 shrink-0">•</span>
+                                <span className="font-bold text-indigo-600 truncate">{m.divisi}</span>
                               </div>
                             </div>
                             {isEndingSoon && (

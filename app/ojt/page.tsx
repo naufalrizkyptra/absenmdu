@@ -624,45 +624,58 @@ export default function BerandaOJT() {
               <div className={`p-5 rounded-3xl border shadow-md relative overflow-hidden transition-all ${
                 isDarkMode 
                   ? 'bg-gradient-to-r from-[#17203d] to-[#1d2b50] border-indigo-500/30 text-white' 
-                  : 'bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 border-indigo-200/70 text-slate-900'
+                  : 'bg-white border-2 border-indigo-100 shadow-indigo-100/40 text-slate-900'
               }`}>
-                <div className="flex items-start justify-between gap-3 mb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
-                      activeAnnouncement.category === 'penting'
-                        ? 'bg-rose-500 text-white shadow-xs'
-                        : activeAnnouncement.category === 'evaluasi'
-                        ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-indigo-600 text-white shadow-xs'
-                    }`}>
-                      {activeAnnouncement.category === 'penting'
-                        ? 'Penting'
-                        : activeAnnouncement.category === 'evaluasi'
-                        ? 'Evaluasi'
-                        : 'Info Tim'}
-                    </span>
-                    <span className={`text-[11px] font-bold ${isDarkMode ? 'text-indigo-300' : 'text-indigo-700'}`}>
-                      Instruksi Mentor {mentorName}
+                {/* Accent bar strip on left border for visual punch */}
+                <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${
+                  activeAnnouncement.category === 'penting'
+                    ? 'bg-rose-500'
+                    : activeAnnouncement.category === 'evaluasi'
+                    ? 'bg-purple-600'
+                    : 'bg-indigo-600'
+                }`} />
+
+                <div className="pl-2">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                        activeAnnouncement.category === 'penting'
+                          ? 'bg-rose-500 text-white shadow-xs'
+                          : activeAnnouncement.category === 'evaluasi'
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'bg-indigo-600 text-white shadow-xs'
+                      }`}>
+                        {activeAnnouncement.category === 'penting'
+                          ? 'Penting'
+                          : activeAnnouncement.category === 'evaluasi'
+                          ? 'Evaluasi'
+                          : 'Info Tim'}
+                      </span>
+                      <span className={`text-[11px] font-bold ${isDarkMode ? 'text-indigo-300' : 'text-indigo-700'}`}>
+                        Instruksi Mentor {mentorName}
+                      </span>
+                    </div>
+                    <span className={`text-[11px] font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {new Date(activeAnnouncement.created_at).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">
-                    {new Date(activeAnnouncement.created_at).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                </div>
 
-                <h3 className="font-extrabold text-base mb-1 tracking-tight text-indigo-950 dark:text-white">
-                  {activeAnnouncement.title}
-                </h3>
-                <p className={`text-xs whitespace-pre-line leading-relaxed ${
-                  isDarkMode ? 'text-slate-300' : 'text-slate-700'
-                }`}>
-                  {activeAnnouncement.content}
-                </p>
+                  <h3 className={`font-black text-base mb-1 tracking-tight ${
+                    isDarkMode ? 'text-white' : 'text-slate-900'
+                  }`}>
+                    {activeAnnouncement.title}
+                  </h3>
+                  <p className={`text-xs whitespace-pre-line leading-relaxed ${
+                    isDarkMode ? 'text-slate-300 font-normal' : 'text-slate-700 font-medium'
+                  }`}>
+                    {activeAnnouncement.content}
+                  </p>
+                </div>
               </div>
             </div>
           )}

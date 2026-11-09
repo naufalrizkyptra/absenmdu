@@ -54,3 +54,4 @@ test('Check-out reminder triggers starting at 15.00 WIB when checked in but not 
   const res4 = checkReminderStatus({ currentHour: 15, currentMinute: 30, hasCheckIn: false, hasCheckOut: false });
   assert.strictEqual(res4.triggerCheckOutReminder, false);
 });
+

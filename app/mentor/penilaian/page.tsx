@@ -65,7 +65,7 @@ export default function PenilaianPage() {
     if (teamData) setMentees(teamData)
 
     const menteeIds = (teamData || []).map(m => m.id)
-    const { data: existingGrades } = menteeIds.length > 0 
+    const { data: existingGrades } = menteeIds.length > 0
       ? await supabase.from('ojt_grades').select('*').in('user_id', menteeIds)
       : { data: [] }
     if (existingGrades) setGradesData(existingGrades)
@@ -414,11 +414,22 @@ export default function PenilaianPage() {
         toast.loading('Mencetak PDF resolusi tinggi...', { id: toastId })
         const pdf = new jsPDF('p', 'pt', 'a4')
 
-        // Halaman 1 (Sertifikat)
+        // Halaman 1 (Sertifikat - Format Landscape pada Kertas Portrait)
         const page1 = document.getElementById('cert-page-1')
         if (page1) {
           const canvas1 = await html2canvas(page1, { scale: 2, useCORS: true })
-          pdf.addImage(canvas1.toDataURL('image/png'), 'PNG', 0, 0, 595.28, 841.89)
+
+          // Rotasi format landscape (-90 derajat) agar pas ke kertas A4 portrait
+          const rotatedCanvas = document.createElement('canvas')
+          rotatedCanvas.width = canvas1.height
+          rotatedCanvas.height = canvas1.width
+          const ctx = rotatedCanvas.getContext('2d')
+          if (ctx) {
+            ctx.translate(0, rotatedCanvas.height)
+            ctx.rotate(-Math.PI / 2)
+            ctx.drawImage(canvas1, 0, 0)
+          }
+          pdf.addImage(rotatedCanvas.toDataURL('image/png'), 'PNG', 0, 0, 595.28, 841.89)
         }
 
         // Halaman 2 (Tabel Rapor)
@@ -1101,55 +1112,217 @@ export default function PenilaianPage() {
         <div style={{ position: 'absolute', top: '-10000px', left: '-10000px', opacity: 0, pointerEvents: 'none' }}>
           {certData && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-              <div id="cert-page-1" style={{ width: '794px', height: '1123px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-                <img src="/template-portrait-front.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: -1 }} alt="Background" crossOrigin="anonymous" />
-                <div style={{ position: 'absolute', top: '265px', left: 0, width: '100%', textAlign: 'center' }}>
-                  <p style={{ fontSize: '1.25rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 'bold' }}>{certData.grades?.no_sertifikat || '___/MDU/___/____'}</p>
+              {/* Halaman 1: Sertifikat Depan (Format Landscape Sesuai Template Word w_Blanco) */}
+              <div
+                id="cert-page-1"
+                style={{
+                  width: '1123px',
+                  height: '794px',
+                  backgroundColor: '#ffffff',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  boxSizing: 'border-box',
+                  padding: '60px 80px',
+                  fontFamily: 'sans-serif',
+                  color: '#111827',
+                  textAlign: 'center'
+                }}
+              >
+                {/* Nomor Sertifikat */}
+                <div style={{ marginBottom: '22px' }}>
+                  <p style={{ fontSize: '1.35rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 700, textDecoration: 'underline' }}>
+                    No : {certData.grades?.no_sertifikat || '328/MDU/IX/2026'}
+                  </p>
                 </div>
-                <div style={{ position: 'absolute', top: '400px', left: 0, width: '100%', textAlign: 'center' }}>
-                  <h2 style={{ fontSize: '3.2rem', fontFamily: 'serif', fontStyle: 'italic', color: '#111827', margin: 0 }}>{certData.student?.name}</h2>
+
+                {/* Diberikan kepada */}
+                <div style={{ marginBottom: '6px' }}>
+                  <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                    Diberikan kepada:
+                  </p>
                 </div>
-                <div style={{ position: 'absolute', top: '500px', left: 0, width: '100%', textAlign: 'center' }}>
-                  <h3 style={{ fontSize: '1.6rem', fontFamily: 'sans-serif', fontWeight: 900, color: '#111827', margin: 0 }}>{certData.student?.divisi || 'Multimedia'}</h3>
+
+                {/* Nama Peserta */}
+                <div style={{ marginBottom: '14px' }}>
+                  <h2 style={{ fontSize: '2.8rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#0F3357', margin: 0, fontWeight: 700, letterSpacing: '0.02em' }}>
+                    {certData.student?.name || 'Nama Peserta'}
+                  </h2>
                 </div>
-                <div style={{ position: 'absolute', top: '600px', left: 0, width: '100%', textAlign: 'center' }}>
-                  <p style={{ fontSize: '1.4rem', fontFamily: 'sans-serif', color: '#111827', margin: 0, fontWeight: 500 }}>Terhitung mulai tanggal {certData.student?.start_period || '-'} sampai dengan {certData.student?.end_period || '-'}</p>
+
+                {/* sebagai */}
+                <div style={{ marginBottom: '4px' }}>
+                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                    sebagai
+                  </p>
+                </div>
+
+                {/* On Job Training (OJT) */}
+                <div style={{ marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '1.55rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 800, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
+                    On Job Training (OJT)
+                  </h3>
+                </div>
+
+                {/* Pada Divisi */}
+                <div style={{ marginBottom: '4px' }}>
+                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                    Pada Divisi
+                  </p>
+                </div>
+
+                {/* Nama Divisi */}
+                <div style={{ marginBottom: '18px' }}>
+                  <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 900, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
+                    {certData.student?.divisi || 'Multimedia'}
+                  </h3>
+                </div>
+
+                {/* Keterangan Pelaksanaan */}
+                <div style={{ marginBottom: '4px' }}>
+                  <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
+                    Telah melaksanakan praktik kerja lapangan pada Mandiri Digital Universe
+                  </p>
+                </div>
+
+                {/* Periode Tanggal */}
+                <div style={{ marginBottom: '18px' }}>
+                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
+                    Terhitung mulai tanggal {certData.student?.start_period || '-'} sampai dengan {certData.student?.end_period || '-'}
+                  </p>
+                </div>
+
+                {/* Pengesahan CMO (Format Desain Font Resmi Sesuai Gambar) */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 2px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 700, color: '#0F3357' }}>
+                    {certData.student?.asal_kantor ? `${certData.student.asal_kantor}, ` : 'Jatiwaringin, '}
+                    {certData.grades?.created_at ? new Date(certData.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                  <p style={{ margin: '0 0 3px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 400, color: '#111827' }}>
+                    Chief Marketing Officer
+                  </p>
+                  <div style={{ position: 'relative', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '2px 0' }}>
+                    <img
+                      src="/stamp-signature-cmo.png"
+                      alt="Stempel & Tanda Tangan Resmi MDU"
+                      style={{ height: '70px', width: 'auto', objectFit: 'contain' }}
+                      crossOrigin="anonymous"
+                    />
+                  </div>
+                  <div style={{ width: '160px', height: '2px', background: 'linear-gradient(90deg, #b8860b, #e2b755, #b8860b)', margin: '4px 0 5px 0', borderRadius: '1px' }}></div>
+                  <p style={{ margin: 0, fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 600, color: '#111827' }}>
+                    Sofian Wira Hadi, M.Kom.
+                  </p>
                 </div>
               </div>
               <div id="cert-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif', color: '#000000' }}>
-                <div style={{ position: 'relative', padding: '120px 95px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
-                  <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0F3357', textTransform: 'uppercase', marginBottom: '1rem' }}>LEMBAR PENILAIAN OJT</h2>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', marginBottom: '1rem', fontSize: '0.75rem' }}>
+                <div style={{ position: 'relative', padding: '45px 85px 25px 85px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F3357', textTransform: 'uppercase', marginBottom: '0.85rem', textAlign: 'center', letterSpacing: '0.05em' }}>
+                    LEMBAR PENILAIAN OJT
+                  </h2>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', marginBottom: '0.85rem', fontSize: '0.74rem', lineHeight: '1.2' }}>
                     <tbody>
                       {[['Nama', certData.student?.name || '-'], ['Kelas', certData.grades?.kelas || '-'], ['Sekolah', certData.student?.asal_sekolah || '-'], ['Jurusan', certData.grades?.jurusan || '-'], ['Tanggal', `${certData.student?.start_period || '-'} s/d ${certData.student?.end_period || '-'}`], ['Posisi', certData.student?.divisi || '-']].map((row, i) => (
                         <tr key={i}>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem', fontWeight: 700 }}>{row[0]}</td>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem', fontWeight: 700 }}>{row[1]}</td>
+                          <td style={{ border: '1px solid #0F3357', padding: '4px 10px 10px 10px', fontWeight: 700, width: '35%', backgroundColor: '#f8fafc', verticalAlign: 'middle', lineHeight: '1.2' }}>{row[0]}</td>
+                          <td style={{ border: '1px solid #0F3357', padding: '4px 10px 10px 10px', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{row[1]}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', fontSize: '0.7rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', fontSize: '0.7rem', lineHeight: '1.2' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#0F3357', color: '#FCE91A' }}>
-                        <th style={{ border: '1px solid #0F3357', padding: '0.4rem' }}>Aspek</th>
-                        <th style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>Nilai</th>
-                        <th style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>Predikat</th>
+                        <th style={{ border: '1px solid #0F3357', padding: '6px 4px 10px 4px', textAlign: 'center', width: '45px', verticalAlign: 'middle', lineHeight: '1.2' }}>No</th>
+                        <th style={{ border: '1px solid #0F3357', padding: '6px 10px 10px 10px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.2' }}>Aspek Penilaian</th>
+                        <th style={{ border: '1px solid #0F3357', padding: '6px 4px 10px 4px', textAlign: 'center', width: '75px', verticalAlign: 'middle', lineHeight: '1.2' }}>Nilai</th>
+                        <th style={{ border: '1px solid #0F3357', padding: '6px 4px 10px 4px', textAlign: 'center', width: '75px', verticalAlign: 'middle', lineHeight: '1.2' }}>Predikat</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {['q1_waktu', 'q2_sikap', 'q3_tanggung_jawab', 'q4_kehadiran', 'q5_kemampuan', 'q6_keterampilan', 'q7_kualitas', 'q8_komunikasi', 'q9_kerjasama', 'q10_inisiatif', 'q11_percaya_diri', 'q12_patuh_aturan', 'q13_penampilan'].map((q, i) => (
-                        <tr key={q} style={{ backgroundColor: i % 2 === 0 ? '#f0f5fa' : 'white' }}>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem' }}>{['Waktu', 'Sikap', 'Tanggung Jawab', 'Kehadiran', 'Kemampuan', 'Keterampilan', 'Kualitas', 'Komunikasi', 'Kerjasama', 'Inisiatif', 'Percaya Diri', 'Kepatuhan', 'Penampilan'][i]}</td>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{certData.grades?.[q] || 0}</td>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{getLetterGrade(certData.grades?.[q] || 0)}</td>
+                      {[
+                        { q: 'q1_waktu', label: 'Disiplin Waktu & Kehadiran' },
+                        { q: 'q2_sikap', label: 'Etika & Sikap Perilaku' },
+                        { q: 'q3_tanggung_jawab', label: 'Tanggung Jawab Penugasan' },
+                        { q: 'q4_kehadiran', label: 'Konsistensi Presensi' },
+                        { q: 'q5_kemampuan', label: 'Kemampuan Kerja & Problem Solving' },
+                        { q: 'q6_keterampilan', label: 'Keterampilan Teknis & Kreativitas' },
+                        { q: 'q7_kualitas', label: 'Kualitas Hasil Pekerjaan' },
+                        { q: 'q8_komunikasi', label: 'Komunikasi & Koordinasi' },
+                        { q: 'q9_kerjasama', label: 'Kerjasama Tim' },
+                        { q: 'q10_inisiatif', label: 'Inisiatif & Keaktifan' },
+                        { q: 'q11_percaya_diri', label: 'Percaya Diri & Kemandirian' },
+                        { q: 'q12_patuh_aturan', label: 'Kepatuhan Tata Tertib MDU' },
+                        { q: 'q13_penampilan', label: 'Kerapian & Penampilan' }
+                      ].map((item, i) => (
+                        <tr key={item.q} style={{ backgroundColor: i % 2 === 0 ? '#f0f5fa' : 'white' }}>
+                          <td style={{ border: '1px solid #0F3357', padding: '3px 4px 20px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 600, lineHeight: '1.2' }}>{i + 1}</td>
+                          <td style={{ border: '1px solid #0F3357', padding: '3px 10px 20px 10px', textAlign: 'left', verticalAlign: 'middle', lineHeight: '1.2' }}>{item.label}</td>
+                          <td style={{ border: '1px solid #0F3357', padding: '3px 4px 20px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{certData.grades?.[item.q] || 0}</td>
+                          <td style={{ border: '1px solid #0F3357', padding: '3px 4px 20px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{getLetterGrade(certData.grades?.[item.q] || 0)}</td>
                         </tr>
                       ))}
                       <tr style={{ backgroundColor: '#FCE91A', color: '#0F3357', fontWeight: 800 }}>
-                        <td colSpan={3} style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>RATA-RATA AKHIR</td>
+                        <td colSpan={2} style={{ border: '1px solid #0F3357', padding: '15px 10px 20px 10px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.5' }}>RATA-RATA AKHIR</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '15px 4px 20px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.5' }}>{calculateAverage(certData.grades)}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '15px 4px 20px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.5' }}>{getLetterGrade(Number(calculateAverage(certData.grades)))}</td>
                       </tr>
                     </tbody>
                   </table>
+
+                  {/* Ketentuan Penilaian */}
+                  <div style={{ marginTop: '12px', fontSize: '0.66rem', color: '#334155', lineHeight: '1.45', borderLeft: '3px solid #0F3357', paddingLeft: '8px' }}>
+                    <p style={{ margin: 0, fontWeight: 700, color: '#0F3357' }}>Ketentuan penilaian:</p>
+                    <p style={{ margin: '2px 0 0 0' }}>
+                      96 s/d 100 : Nilai A+, 91 s/d 95 : Nilai A, 86 s/d 90 : Nilai A-, 81 s/d 85 : Nilai B+, 76 s/d 80 : Nilai B, 71 s/d 75 : Nilai B-, 66 s/d 70 : Nilai C
+                    </p>
+                  </div>
+
+                  {/* Tanda Tangan & Stempel Resmi MDU */}
+                  <div style={{ marginTop: '2px', display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                    <div style={{ textAlign: 'center', width: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <p style={{ margin: '0 0 3px 0', fontSize: '0.78rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#0F3357', fontWeight: 700 }}>
+                        {certData.student?.asal_kantor ? `${certData.student.asal_kantor}, ` : 'Jatiwaringin, '}
+                        {certData.grades?.created_at ? new Date(certData.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      <img
+                        src="/signature-mdu.png"
+                        alt="Tanda Tangan & Stempel MDU"
+                        style={{ width: '155px', height: 'auto', display: 'block' }}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Media Partner MDU */}
+                  <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1.5px solid #0F3357', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <p style={{ margin: 0, fontSize: '0.68rem', fontWeight: 800, color: '#0F3357', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Media Partner:
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+                      <img
+                        src="/partners/milenianews.jpg"
+                        alt="Milenianews.com"
+                        style={{ height: '26px', width: 'auto', objectFit: 'contain' }}
+                        crossOrigin="anonymous"
+                      />
+                      <img
+                        src="/partners/sobatsekolah.png"
+                        alt="Sobat Sekolah"
+                        style={{ height: '30px', width: 'auto', objectFit: 'contain' }}
+                        crossOrigin="anonymous"
+                      />
+                      <img
+                        src="/partners/nusamandirinews.png"
+                        alt="Nusa Mandiri News"
+                        style={{ height: '24px', width: 'auto', objectFit: 'contain' }}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>

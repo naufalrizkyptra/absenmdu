@@ -140,12 +140,23 @@ export default function SertifikatOJTPage() {
 
       const pdf = new jsPDF('p', 'pt', 'a4')
 
-      // Halaman 1 (Sertifikat Depan)
+      // Halaman 1 (Sertifikat OJT Depan - Format Landscape pada Kertas Portrait)
       const page1 = document.getElementById('cert-ojt-page-1')
       if (page1) {
         toast.loading('Mencetak halaman sertifikat...', { id: toastId })
         const canvas1 = await html2canvas(page1, { scale: 2, useCORS: true })
-        pdf.addImage(canvas1.toDataURL('image/png'), 'PNG', 0, 0, 595.28, 841.89)
+
+        // Rotasi format landscape (-90 derajat) agar pas ke kertas A4 portrait
+        const rotatedCanvas = document.createElement('canvas')
+        rotatedCanvas.width = canvas1.height
+        rotatedCanvas.height = canvas1.width
+        const ctx = rotatedCanvas.getContext('2d')
+        if (ctx) {
+          ctx.translate(0, rotatedCanvas.height)
+          ctx.rotate(-Math.PI / 2)
+          ctx.drawImage(canvas1, 0, 0)
+        }
+        pdf.addImage(rotatedCanvas.toDataURL('image/png'), 'PNG', 0, 0, 595.28, 841.89)
       }
 
       // Halaman 2 (Lembar Penilaian OJT)
@@ -179,7 +190,7 @@ export default function SertifikatOJTPage() {
     <>
       <Toaster position="top-center" richColors />
       <div className="min-h-screen bg-[#f0f4fc] font-sans flex">
-        
+
         {/* =========================================
           1. DESKTOP SIDEBAR (KHUSUS DESKTOP)
           ========================================= */}
@@ -258,13 +269,13 @@ export default function SertifikatOJTPage() {
           2. KONTEN UTAMA DENGAN HEADER GRADASI SERASI
           ========================================= */}
         <main className="flex-1 md:ml-72 flex flex-col h-[100dvh] overflow-y-auto pb-28 md:pb-12">
-          
+
           {/* TOP HEADER SELARAS DENGAN BERANDA & PRESENSI */}
           <div className="relative bg-gradient-to-b from-[#102447] via-[#16356c] to-[#1e4591] text-white pt-4 pb-7 px-4 sm:px-8 rounded-b-[2.5rem] shadow-xl overflow-hidden shrink-0">
             <div className="absolute top-0 right-0 w-80 h-80 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="relative z-10 max-w-6xl xl:max-w-7xl mx-auto flex flex-col gap-3.5">
-              
+
               {/* BARIS 1: JAM REALTIME WIB PROMINENT + STATUS SERTIFIKAT */}
               <div className="flex items-center justify-between pb-3 border-b border-white/15">
                 <div className="flex items-center gap-2.5">
@@ -281,11 +292,10 @@ export default function SertifikatOJTPage() {
 
                 {/* Badge Status Kelulusan */}
                 <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-xs border ${
-                    isCertificateReady 
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' 
-                      : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-xs border ${isCertificateReady
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                    }`}>
                     <span className={`w-2 h-2 rounded-full ${isCertificateReady ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
                     {isCertificateReady ? 'Sertifikat Terbit' : 'Dalam Proses Evaluasi'}
                   </span>
@@ -326,11 +336,11 @@ export default function SertifikatOJTPage() {
 
           {/* MAIN BODY CONTAINER */}
           <div className="max-w-6xl xl:max-w-7xl w-full mx-auto px-4 sm:px-8 mt-6 flex-1 flex flex-col gap-6">
-            
+
             {/* PROFILE SUMMARY STRIP: NIP, Instansi, Penempatan, Divisi, Periode, Mentor */}
             <div className="bg-gradient-to-r from-[#111c44] via-[#1a2b6b] to-[#0f172a] rounded-3xl p-5 md:p-6 text-white shadow-xl relative overflow-hidden border border-white/10">
               <div className="absolute -right-12 -top-12 w-44 h-44 rounded-full bg-blue-500/20 blur-2xl pointer-events-none"></div>
-              
+
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-white/10 p-1 border border-white/20 shadow-inner flex items-center justify-center shrink-0">
@@ -391,11 +401,11 @@ export default function SertifikatOJTPage() {
                  TAMPILAN 2-KOLOM MODERN DI DESKTOP
                  ========================================= */
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                
+
                 {/* KOLOM KIRI (7 Kolom): PREVIEW MOCKUP SERTIFIKAT & CTA DOWNLOAD */}
                 <div className="lg:col-span-7 flex flex-col gap-5">
                   <div className="bg-white rounded-3xl p-5 md:p-7 shadow-sm border border-slate-200/80">
-                    
+
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
@@ -430,7 +440,7 @@ export default function SertifikatOJTPage() {
                     {/* VISUAL CERTIFICATE MOCKUP */}
                     <div className="mt-5 bg-gradient-to-br from-slate-900 via-[#132247] to-[#1e1b4b] rounded-2xl p-5 md:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
                       <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl pointer-events-none"></div>
-                      
+
                       <div className="border border-white/20 rounded-xl p-5 md:p-8 bg-white/5 backdrop-blur-sm flex flex-col items-center text-center relative z-10">
                         <div className="w-13 h-13 rounded-2xl bg-white p-1.5 shadow-md mb-3 flex items-center justify-center">
                           <img src="/logo-mdu.PNG" alt="MDU Logo" className="w-full h-full object-contain" />
@@ -441,22 +451,43 @@ export default function SertifikatOJTPage() {
                         <h4 className="text-lg md:text-2xl font-extrabold tracking-tight mt-1 text-white">
                           SERTIFIKAT PRAKTIK KERJA LAPANGAN
                         </h4>
-                        {grades?.no_sertifikat && (
-                          <p className="text-xs font-mono text-blue-200 mt-1">
-                            Nomor: {grades.no_sertifikat}
-                          </p>
-                        )}
-                        <div className="my-4 w-20 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+                        <p className="text-xs font-mono text-blue-200 mt-1">
+                          No : {grades?.no_sertifikat || '___/MDU/IX/2026'}
+                        </p>
+                        <div className="my-3.5 w-20 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
                         <p className="text-xs text-slate-300">Diberikan kepada:</p>
-                        <p className="text-2xl md:text-3xl font-black text-amber-300 font-serif italic mt-1.5 tracking-wide">
+                        <p className="text-2xl md:text-3xl font-black text-amber-300 font-serif italic mt-1 tracking-wide">
                           {profile?.name}
                         </p>
-                        <p className="text-xs text-blue-100 mt-1.5">
-                          Sebagai Peserta Magang / OJT Divisi <strong className="text-white">{profile?.divisi || 'Multimedia'}</strong>
+
+                        <p className="text-xs text-slate-300 mt-3">sebagai</p>
+                        <p className="text-sm md:text-base font-extrabold text-blue-200 mt-0.5">
+                          On Job Training (OJT)
                         </p>
-                        <p className="text-[11px] text-slate-400 mt-3 max-w-md leading-relaxed">
-                          Telah menyelesaikan seluruh rangkaian program Praktik Kerja Lapangan dengan dedikasi dan pencapaian kompetensi yang sangat baik.
+
+                        <p className="text-xs text-slate-300 mt-2">Pada Divisi</p>
+                        <p className="text-base md:text-lg font-black text-white mt-0.5 tracking-wide">
+                          {profile?.divisi || 'Multimedia'}
                         </p>
+
+                        <p className="text-xs text-slate-300 mt-3.5 max-w-md leading-relaxed">
+                          Telah melaksanakan praktik kerja lapangan pada Mandiri Digital Universe
+                        </p>
+                        <p className="text-xs text-blue-200 mt-1 font-medium">
+                          Terhitung mulai tanggal {profile?.start_period || '-'} sampai dengan {profile?.end_period || '-'}
+                        </p>
+
+                        {/* Pengesahan CMO */}
+                        <div className="mt-4 pt-3 border-t border-white/10 flex flex-col items-center">
+                          <p className="text-[11px] font-bold text-blue-200 mb-0.5 font-sans">
+                            {profile?.asal_kantor ? `${profile.asal_kantor}, ` : 'Jatiwaringin, '}
+                            {grades?.created_at ? new Date(grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </p>
+                          <p className="text-[11px] text-slate-300 mb-0.5 font-sans">Chief Marketing Officer</p>
+                          <img src="/stamp-signature-cmo.png" alt="Stempel & Tanda Tangan Resmi MDU" className="h-12 w-auto object-contain my-1" />
+                          <div className="w-28 h-[1.5px] bg-gradient-to-r from-amber-600 via-amber-300 to-amber-600 my-1"></div>
+                          <p className="text-xs font-bold text-white mt-0.5 font-sans">Sofian Wira Hadi, M.Kom.</p>
+                        </div>
                       </div>
                     </div>
 
@@ -536,6 +567,47 @@ export default function SertifikatOJTPage() {
                       </div>
                     </div>
 
+                    {/* KETENTUAN PENILAIAN */}
+                    <div className="mt-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] leading-relaxed">
+                      <p className="font-extrabold text-[#0F3357] mb-1">Ketentuan penilaian:</p>
+                      <p className="text-slate-600">
+                        96 s/d 100 : Nilai A+, 91 s/d 95 : Nilai A, 86 s/d 90 : Nilai A-, 81 s/d 85 : Nilai B+, 76 s/d 80 : Nilai B, 71 s/d 75 : Nilai B-, 66 s/d 70 : Nilai C
+                      </p>
+                    </div>
+
+                    {/* PENGESAHAN RESMI (TANDA TANGAN & STEMPEL MDU) */}
+                    <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col items-center sm:items-end text-center sm:text-right">
+                      <p className="text-xs text-slate-500 font-medium mb-1">
+                        {profile?.asal_kantor ? `${profile.asal_kantor}, ` : 'Jakarta, '}
+                        {grades?.created_at ? new Date(grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      <div className="bg-slate-50/80 rounded-2xl p-2.5 border border-slate-100 inline-flex flex-col items-center">
+                        <img
+                          src="/signature-mdu.png"
+                          alt="Tanda Tangan & Stempel Resmi MDU"
+                          className="w-48 h-auto object-contain"
+                        />
+                      </div>
+                    </div>
+
+                    {/* MEDIA PARTNER */}
+                    <div className="mt-4 pt-3.5 border-t border-slate-100">
+                      <p className="text-[11px] font-extrabold text-[#0F3357] uppercase tracking-wider mb-2.5 text-center sm:text-left">
+                        Media Partner
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-200/60">
+                        <div className="h-8 flex items-center bg-white px-3 py-1 rounded-xl shadow-xs border border-slate-200/80">
+                          <img src="/partners/milenianews.jpg" alt="Milenianews.com" className="h-5 w-auto object-contain" />
+                        </div>
+                        <div className="h-8 flex items-center bg-white px-3 py-1 rounded-xl shadow-xs border border-slate-200/80">
+                          <img src="/partners/sobatsekolah.png" alt="Sobat Sekolah" className="h-6 w-auto object-contain" />
+                        </div>
+                        <div className="h-8 flex items-center bg-white px-3 py-1 rounded-xl shadow-xs border border-slate-200/80">
+                          <img src="/partners/nusamandirinews.png" alt="Nusa Mandiri News" className="h-5 w-auto object-contain" />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* CATATAN RESMI */}
                     <p className="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100 leading-relaxed text-center">
                       Dokumen ini diterbitkan secara resmi oleh PT Mandiri Digital Universe melalui sistem evaluasi mentor pembimbing OJT.
@@ -601,7 +673,7 @@ export default function SertifikatOJTPage() {
             ========================================= */}
           <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
             <div className="relative backdrop-blur-xl bg-white/95 border-t border-slate-200/80 shadow-[0_-8px_25px_rgba(0,0,0,0.12)] px-3 py-2 flex items-center justify-around text-slate-700">
-              
+
               {/* Beranda */}
               <button
                 onClick={() => router.push('/ojt')}
@@ -675,88 +747,223 @@ export default function SertifikatOJTPage() {
         {/* TEMPLATE ELEMEN PDF TERSEMBUNYI (UNTUK DIRENDER KE HTML2CANVAS & JSPDF) */}
         <div style={{ position: 'absolute', top: '-10000px', left: '-10000px', opacity: 0, pointerEvents: 'none' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-            
-            {/* Halaman 1: Sertifikat Depan */}
-            <div id="cert-ojt-page-1" style={{ width: '794px', height: '1123px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-              <img src="/template-portrait-front.png" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: -1 }} alt="Background" crossOrigin="anonymous" />
-              <div style={{ position: 'absolute', top: '265px', left: 0, width: '100%', textAlign: 'center' }}>
-                <p style={{ fontSize: '1.25rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 'bold' }}>
-                  {grades?.no_sertifikat || '___/MDU/OJT/____'}
+
+            {/* Halaman 1: Sertifikat Depan (Format Landscape Sesuai Template Word w_Blanco) */}
+            <div
+              id="cert-ojt-page-1"
+              style={{
+                width: '1123px',
+                height: '794px',
+                backgroundColor: '#ffffff',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                boxSizing: 'border-box',
+                padding: '60px 80px',
+                fontFamily: 'sans-serif',
+                color: '#111827',
+                textAlign: 'center'
+              }}
+            >
+              {/* Nomor Sertifikat */}
+              <div style={{ marginBottom: '22px' }}>
+                <p style={{ fontSize: '1.35rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 700, textDecoration: 'underline' }}>
+                  No : {grades?.no_sertifikat || '328/MDU/IX/2026'}
                 </p>
               </div>
-              <div style={{ position: 'absolute', top: '400px', left: 0, width: '100%', textAlign: 'center' }}>
-                <h2 style={{ fontSize: '3.2rem', fontFamily: 'serif', fontStyle: 'italic', color: '#111827', margin: 0 }}>
-                  {profile?.name}
+
+              {/* Diberikan kepada */}
+              <div style={{ marginBottom: '6px' }}>
+                <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                  Diberikan kepada:
+                </p>
+              </div>
+
+              {/* Nama Peserta */}
+              <div style={{ marginBottom: '14px' }}>
+                <h2 style={{ fontSize: '2.8rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#0F3357', margin: 0, fontWeight: 700, letterSpacing: '0.02em' }}>
+                  {profile?.name || 'Nama Peserta'}
                 </h2>
               </div>
-              <div style={{ position: 'absolute', top: '500px', left: 0, width: '100%', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '1.6rem', fontFamily: 'sans-serif', fontWeight: 900, color: '#111827', margin: 0 }}>
+
+              {/* sebagai */}
+              <div style={{ marginBottom: '4px' }}>
+                <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                  sebagai
+                </p>
+              </div>
+
+              {/* On Job Training (OJT) */}
+              <div style={{ marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '1.55rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 800, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
+                  On Job Training (OJT)
+                </h3>
+              </div>
+
+              {/* Pada Divisi */}
+              <div style={{ marginBottom: '4px' }}>
+                <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                  Pada Divisi
+                </p>
+              </div>
+
+              {/* Nama Divisi */}
+              <div style={{ marginBottom: '18px' }}>
+                <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 900, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
                   {profile?.divisi || 'Multimedia'}
                 </h3>
               </div>
-              <div style={{ position: 'absolute', top: '600px', left: 0, width: '100%', textAlign: 'center' }}>
-                <p style={{ fontSize: '1.4rem', fontFamily: 'sans-serif', color: '#111827', margin: 0, fontWeight: 500 }}>
+
+              {/* Keterangan Pelaksanaan */}
+              <div style={{ marginBottom: '4px' }}>
+                <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
+                  Telah melaksanakan praktik kerja lapangan pada Mandiri Digital Universe
+                </p>
+              </div>
+
+              {/* Periode Tanggal */}
+              <div style={{ marginBottom: '18px' }}>
+                <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
                   Terhitung mulai tanggal {profile?.start_period || '-'} sampai dengan {profile?.end_period || '-'}
                 </p>
               </div>
-            </div>
 
-            {/* Halaman 2: Lembar Penilaian Rapor OJT */}
-            <div id="cert-ojt-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif', color: '#000000' }}>
-              <div style={{ position: 'relative', padding: '120px 95px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0F3357', textTransform: 'uppercase', marginBottom: '1rem' }}>
-                  LEMBAR PENILAIAN OJT
-                </h2>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', marginBottom: '1rem', fontSize: '0.75rem' }}>
-                  <tbody>
-                    {[
-                      ['Nama', profile?.name || '-'],
-                      ['NIP', profile?.nip || '-'],
-                      ['Sekolah / Instansi', profile?.asal_sekolah || '-'],
-                      ['Divisi / Posisi', profile?.divisi || '-'],
-                      ['Periode', `${profile?.start_period || '-'} s/d ${profile?.end_period || '-'}`],
-                      ['Penempatan', profile?.asal_kantor || '-']
-                    ].map((row, i) => (
-                      <tr key={i}>
-                        <td style={{ border: '1px solid #0F3357', padding: '0.35rem 0.6rem', fontWeight: 700, width: '35%', backgroundColor: '#f8fafc' }}>{row[0]}</td>
-                        <td style={{ border: '1px solid #0F3357', padding: '0.35rem 0.6rem', fontWeight: 700 }}>{row[1]}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', fontSize: '0.7rem' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#0F3357', color: '#FCE91A' }}>
-                      <th style={{ border: '1px solid #0F3357', padding: '0.4rem' }}>Aspek Penilaian</th>
-                      <th style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center', width: '70px' }}>Nilai</th>
-                      <th style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center', width: '70px' }}>Predikat</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {aspectList.map((aspect, i) => {
-                      const score = grades?.[aspect.key] ?? 0
-                      return (
-                        <tr key={aspect.key} style={{ backgroundColor: i % 2 === 0 ? '#f0f5fa' : 'white' }}>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem 0.5rem' }}>{aspect.label}</td>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{score}</td>
-                          <td style={{ border: '1px solid #0F3357', padding: '0.3rem', textAlign: 'center', fontWeight: 700 }}>{getLetterGrade(score)}</td>
-                        </tr>
-                      )
-                    })}
-                    <tr style={{ backgroundColor: '#FCE91A', color: '#0F3357', fontWeight: 800 }}>
-                      <td style={{ border: '1px solid #0F3357', padding: '0.4rem 0.5rem' }}>RATA-RATA AKHIR</td>
-                      <td style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>{avgScore}</td>
-                      <td style={{ border: '1px solid #0F3357', padding: '0.4rem', textAlign: 'center' }}>{letterGrade}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              {/* Pengesahan CMO (Format Desain Font Resmi Sesuai Gambar) */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 2px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 700, color: '#0F3357' }}>
+                  {profile?.asal_kantor ? `${profile.asal_kantor}, ` : 'Jatiwaringin, '}
+                  {grades?.created_at ? new Date(grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+                <p style={{ margin: '0 0 3px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 400, color: '#111827' }}>
+                  Chief Marketing Officer
+                </p>
+                <div style={{ position: 'relative', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '2px 0' }}>
+                  <img
+                    src="/stamp-signature-cmo.png"
+                    alt="Stempel & Tanda Tangan Resmi MDU"
+                    style={{ height: '70px', width: 'auto', objectFit: 'contain' }}
+                    crossOrigin="anonymous"
+                  />
+                </div>
+                <div style={{ width: '160px', height: '2px', background: 'linear-gradient(90deg, #b8860b, #e2b755, #b8860b)', margin: '4px 0 5px 0', borderRadius: '1px' }}></div>
+                <p style={{ margin: 0, fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 600, color: '#111827' }}>
+                  Sofian Wira Hadi, M.Kom.
+                </p>
               </div>
-            </div>
+              </div>
 
-          </div>
-        </div>
+              {/* Halaman 2: Lembar Penilaian Rapor OJT */}
+              <div id="cert-ojt-page-2" style={{ width: '794px', height: '1123px', backgroundColor: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: 'sans-serif', color: '#000000' }}>
+                  <div style={{ position: 'relative', padding: '45px 85px 25px 85px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F3357', textTransform: 'uppercase', marginBottom: '0.85rem', textAlign: 'center', letterSpacing: '0.05em' }}>
+                      LEMBAR PENILAIAN OJT
+                    </h2>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', marginBottom: '0.85rem', fontSize: '0.74rem', lineHeight: '1.2' }}>
+                      <tbody>
+                        {[
+                          ['Nama', profile?.name || '-'],
+                          ['NIP', profile?.nip || '-'],
+                          ['Sekolah / Instansi', profile?.asal_sekolah || '-'],
+                          ['Divisi / Posisi', profile?.divisi || '-'],
+                          ['Periode', `${profile?.start_period || '-'} s/d ${profile?.end_period || '-'}`],
+                          ['Penempatan', profile?.asal_kantor || '-']
+                        ].map((row, i) => (
+                          <tr key={i}>
+                            <td style={{ border: '1px solid #0F3357', padding: '4px 10px 15px 10px', fontWeight: 700, width: '35%', backgroundColor: '#f8fafc', verticalAlign: 'middle', lineHeight: '1.2' }}>{row[0]}</td>
+                            <td style={{ border: '1px solid #0F3357', padding: '4px 10px 15px 10px', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{row[1]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', fontSize: '0.7rem', lineHeight: '1.2' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#0F3357', color: '#FCE91A' }}>
+                          <th style={{ border: '1px solid #0F3357', padding: '6px 4px 15px 4px', textAlign: 'center', width: '45px', verticalAlign: 'middle', lineHeight: '1.2' }}>No</th>
+                          <th style={{ border: '1px solid #0F3357', padding: '6px 10px 15px 10px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.2' }}>Aspek Penilaian</th>
+                          <th style={{ border: '1px solid #0F3357', padding: '6px 4px 15px 4px', textAlign: 'center', width: '75px', verticalAlign: 'middle', lineHeight: '1.2' }}>Nilai</th>
+                          <th style={{ border: '1px solid #0F3357', padding: '6px 4px 15px 4px', textAlign: 'center', width: '75px', verticalAlign: 'middle', lineHeight: '1.2' }}>Predikat</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {aspectList.map((aspect, i) => {
+                          const score = grades?.[aspect.key] ?? 0
+                          return (
+                            <tr key={aspect.key} style={{ backgroundColor: i % 2 === 0 ? '#f0f5fa' : 'white' }}>
+                              <td style={{ border: '1px solid #0F3357', padding: '3px 4px 15px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 600, lineHeight: '1.2' }}>{i + 1}</td>
+                              <td style={{ border: '1px solid #0F3357', padding: '3px 10px 15px 10px', textAlign: 'left', verticalAlign: 'middle', lineHeight: '1.2' }}>{aspect.label}</td>
+                              <td style={{ border: '1px solid #0F3357', padding: '3px 4px 15px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{score}</td>
+                              <td style={{ border: '1px solid #0F3357', padding: '3px 4px 15px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{getLetterGrade(score)}</td>
+                            </tr>
+                          )
+                        })}
+                        <tr style={{ backgroundColor: '#FCE91A', color: '#0F3357', fontWeight: 800 }}>
+                          <td colSpan={2} style={{ border: '1px solid #0F3357', padding: '5px 10px 15px 10px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.2' }}>RATA-RATA AKHIR</td>
+                          <td style={{ border: '1px solid #0F3357', padding: '5px 4px 15px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.2' }}>{avgScore}</td>
+                          <td style={{ border: '1px solid #0F3357', padding: '5px 4px 15px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.2' }}>{letterGrade}</td>
+                        </tr>
+                      </tbody>
+                    </table>
 
-      </div>
-    </>
-  )
+                    {/* Ketentuan Penilaian */}
+                    <div style={{ marginTop: '12px', fontSize: '0.66rem', color: '#334155', lineHeight: '1.45', borderLeft: '3px solid #0F3357', paddingLeft: '8px' }}>
+                      <p style={{ margin: 0, fontWeight: 700, color: '#0F3357' }}>Ketentuan penilaian:</p>
+                      <p style={{ margin: '2px 0 0 0' }}>
+                        96 s/d 100 : Nilai A+, 91 s/d 95 : Nilai A, 86 s/d 90 : Nilai A-, 81 s/d 85 : Nilai B+, 76 s/d 80 : Nilai B, 71 s/d 75 : Nilai B-, 66 s/d 70 : Nilai C
+                      </p>
+                    </div>
+
+                    {/* Tanda Tangan & Stempel Resmi MDU */}
+                    <div style={{ marginTop: '2px', display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                      <div style={{ textAlign: 'center', width: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <p style={{ margin: '0 0 3px 0', fontSize: '0.78rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#0F3357', fontWeight: 700 }}>
+                          {profile?.asal_kantor ? `${profile.asal_kantor}, ` : 'Jatiwaringin, '}
+                          {grades?.created_at ? new Date(grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                        <img
+                          src="/signature-mdu.png"
+                          alt="Tanda Tangan & Stempel MDU"
+                          style={{ width: '155px', height: 'auto', display: 'block' }}
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                          </div>
+
+                          {/* Media Partner MDU */}
+                            <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1.5px solid #0F3357', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <p style={{ margin: 0, fontSize: '0.68rem', fontWeight: 800, color: '#0F3357', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Media Partner:
+                              </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+                                  <img
+                                    src="/partners/milenianews.jpg"
+                                    alt="Milenianews.com"
+                                    style={{ height: '26px', width: 'auto', objectFit: 'contain' }}
+                                    crossOrigin="anonymous"
+                                  />
+                                  <img
+                                    src="/partners/sobatsekolah.png"
+                                    alt="Sobat Sekolah"
+                                    style={{ height: '30px', width: 'auto', objectFit: 'contain' }}
+                                    crossOrigin="anonymous"
+                                  />
+                                  <img
+                                    src="/partners/nusamandirinews.png"
+                                    alt="Nusa Mandiri News"
+                                    style={{ height: '24px', width: 'auto', objectFit: 'contain' }}
+                                    crossOrigin="anonymous"
+                                  />
+                                </div>
+                              </div>
+
+                            </div>
+                          </div>
+
+                      </div>
+                    </div>
+
+                  </div>
+                </>
+                )
 }

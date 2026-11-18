@@ -8,6 +8,8 @@ import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { LoadingMDU } from '@/components/LoadingMDU'
 import Swal from 'sweetalert2'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 import { 
   mentorSubmitSpecialAttendance,
   createAnnouncement,
@@ -54,6 +56,10 @@ export default function MentorDashboard() {
   const [lateCounts, setLateCounts] = useState<{ [userId: string]: number }>({})
   const [warningFilter, setWarningFilter] = useState<'all' | 'absent' | 'late' | 'ending'>('all')
 
+  // STATE: Sertifikat Resmi Mentor
+  const [myMentorCertificate, setMyMentorCertificate] = useState<any>(null)
+  const [isPrintingMyCert, setIsPrintingMyCert] = useState(false)
+
   // 1. Ambil Profil & Data Tim (Hanya jalan sekali saat awal load)
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -61,8 +67,20 @@ export default function MentorDashboard() {
       if (!user) { router.push('/login'); return }
       setUser(user)
 
-      const { data: mentorProfile } = await supabase.from('users').select('name, avatar_url, divisi').eq('id', user.id).single()
+      const { data: mentorProfile } = await supabase
+        .from('users')
+        .select('name, avatar_url, divisi, nip, asal_kantor, start_period, end_period')
+        .eq('id', user.id)
+        .single()
       if (mentorProfile) setProfile(mentorProfile)
+
+      // Tarik Sertifikat Resmi Mentor jika sudah diterbitkan Admin
+      const { data: certData } = await supabase
+        .from('mentor_grades')
+        .select('*')
+        .eq('mentor_id', user.id)
+        .maybeSingle()
+      if (certData) setMyMentorCertificate(certData)
 
       const { data: teamData } = await supabase
         .from('users')
@@ -282,6 +300,57 @@ export default function MentorDashboard() {
 
   const formatTime = (isoString: string) => new Date(isoString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
   const getFormattedDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+  // CETAK SERTIFIKAT RESMI MENTOR OLEH MENTOR SENDIRI
+  const handleDownloadMyCertificate = async () => {
+    if (!myMentorCertificate || !myMentorCertificate.no_sertifikat) {
+      toast.warning('Sertifikat Anda belum diterbitkan oleh Admin Utama.')
+      return
+    }
+
+    const toastId = toast.loading('Menyiapkan Sertifikat Mentor Anda...')
+    setIsPrintingMyCert(true)
+
+    try {
+      setTimeout(async () => {
+        toast.loading('Mencetak dokumen resolusi tinggi...', { id: toastId })
+        const pdf = new jsPDF('p', 'pt', 'a4')
+
+        // Halaman 1
+        const page1 = document.getElementById('mentor-self-cert-page-1')
+        if (page1) {
+          const canvas1 = await html2canvas(page1, { scale: 2, useCORS: true })
+          const rotatedCanvas = document.createElement('canvas')
+          rotatedCanvas.width = canvas1.height
+          rotatedCanvas.height = canvas1.width
+          const ctx = rotatedCanvas.getContext('2d')
+          if (ctx) {
+            ctx.translate(0, rotatedCanvas.height)
+            ctx.rotate(-Math.PI / 2)
+            ctx.drawImage(canvas1, 0, 0)
+          }
+          pdf.addImage(rotatedCanvas.toDataURL('image/png'), 'PNG', 0, 0, 595.28, 841.89)
+        }
+
+        // Halaman 2
+        const page2 = document.getElementById('mentor-self-cert-page-2')
+        if (page2) {
+          pdf.addPage('a4', 'portrait')
+          const canvas2 = await html2canvas(page2, { scale: 2, useCORS: true })
+          pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, 595.28, 841.89)
+        }
+
+        const cleanName = (profile?.name || 'Mentor').replace(/\s+/g, '_')
+        pdf.save(`Sertifikat_Mentor_${cleanName}.pdf`)
+        toast.success('Sertifikat resmi berhasil diunduh!', { id: toastId })
+        setIsPrintingMyCert(false)
+      }, 700)
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Gagal mencetak sertifikat: ' + err.message, { id: toastId })
+      setIsPrintingMyCert(false)
+    }
+  }
 
   // HANDLER PENGUMUMAN TIM (BROADCAST)
   const handleCreateAnnouncement = async (e: React.FormEvent) => {
@@ -627,6 +696,38 @@ export default function MentorDashboard() {
                 <p className="text-3xl font-black text-amber-600">{attendances.filter(a => a.status === 'Terlambat').length}</p>
               </div>
             </div>
+
+            {/* BANNER SERTIFIKAT RESMI MENTOR (JIKA TERBIT OLEH ADMIN UTAMA) */}
+            {myMentorCertificate?.no_sertifikat && (
+              <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-amber-300/30">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                    🏆
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black tracking-tight">Sertifikat Mentor Resmi Anda Telah Terbit!</h3>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-white text-amber-900 shadow-sm">
+                        {myMentorCertificate.predikat || 'Sangat Memuaskan'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-100 mt-0.5 font-medium">
+                      No. Sertifikat: <span className="font-mono font-bold text-white">{myMentorCertificate.no_sertifikat}</span> • Diterbitkan oleh Manajemen Pusat MDU
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDownloadMyCertificate}
+                  disabled={isPrintingMyCert}
+                  className="px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                >
+                  <svg className="w-4 h-4 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>{isPrintingMyCert ? 'Menyiapkan PDF...' : 'Unduh Sertifikat PDF Resmi'}</span>
+                </button>
+              </div>
+            )}
 
             {/* ACTION BAR: BROADCAST PENGUMUMAN & QUICK INFO */}
             <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-gradient-to-r from-indigo-900 to-[#1e1b4b] p-4 md:p-5 rounded-3xl text-white shadow-xl">
@@ -1534,6 +1635,278 @@ export default function MentorDashboard() {
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* TEMPLATE RENDER DOM SERTIFIKAT MENTOR MANDIRI (HIDDEN)  */}
+      {/* ======================================================== */}
+      <div style={{ position: 'absolute', top: '-10000px', left: '-10000px', zIndex: -100 }}>
+        {myMentorCertificate && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+            {/* HALAMAN 1: PIAGAM APRESIASI MENTOR PEMBIMBING */}
+            <div
+              id="mentor-self-cert-page-1"
+              style={{
+                width: '1123px',
+                height: '794px',
+                backgroundColor: '#ffffff',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                boxSizing: 'border-box',
+                padding: '145px 80px 40px 80px',
+                fontFamily: 'sans-serif',
+                color: '#111827',
+                textAlign: 'center'
+              }}
+            >
+              <img
+                src="/template-portrait-front.png"
+                alt="Blanco Front"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  zIndex: 0
+                }}
+              />
+
+              <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+                <div style={{ marginBottom: '6px' }}>
+                  <p style={{ fontSize: '1.35rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 700, textDecoration: 'underline' }}>
+                    No : {myMentorCertificate.no_sertifikat || '001/MDU-MENTOR/XI/2026'}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '6px' }}>
+                  <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                    Diberikan kepada:
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '10px' }}>
+                  <h2 style={{ fontSize: '2.8rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#0F3357', margin: 0, fontWeight: 700, letterSpacing: '0.02em' }}>
+                    {profile?.name || 'Nama Mentor'}
+                  </h2>
+                </div>
+
+                <div style={{ marginBottom: '4px' }}>
+                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                    sebagai
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '10px' }}>
+                  <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 800, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
+                    Mentor Pembimbing Praktik Kerja Lapangan
+                  </h3>
+                </div>
+
+                <div style={{ marginBottom: '4px' }}>
+                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                    Pada Divisi
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 900, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
+                    {profile?.divisi || 'Multimedia'}
+                  </h3>
+                </div>
+
+                <div style={{ marginBottom: '6px' }}>
+                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
+                    Telah mendedikasikan keahlian dan membimbing peserta magang pada Mandiri Digital Universe
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <p style={{ fontSize: '1.1rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
+                    Terhitung mulai tanggal {myMentorCertificate.start_period || profile?.start_period || '-'} sampai dengan {myMentorCertificate.end_period || profile?.end_period || '-'}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '10px' }}>
+                  <p style={{ fontSize: '1.25rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#0F3357', fontWeight: 800, margin: 0 }}>
+                    Dengan Predikat: <span style={{ textDecoration: 'underline' }}>{myMentorCertificate.predikat || 'Sangat Memuaskan'}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* HALAMAN 2: TRANSKRIP EVALUASI KINERJA PEMBIMBINGAN */}
+            <div
+              id="mentor-self-cert-page-2"
+              style={{
+                width: '794px',
+                height: '1123px',
+                backgroundColor: '#ffffff',
+                position: 'relative',
+                boxSizing: 'border-box',
+                padding: '60px 50px',
+                fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif",
+                color: '#111827'
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F3357', margin: 0 }}>
+                  LEMBAR EVALUASI KINERJA MENTOR PEMBIMBING
+                </h2>
+                <p style={{ fontSize: '0.9rem', color: '#6B7280', margin: '4px 0 0 0' }}>
+                  PT MANDIRI DIGITAL UNIVERSE (MDU)
+                </p>
+              </div>
+
+              {/* Identitas Mentor */}
+              <div style={{ marginBottom: '20px', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ width: '160px', fontWeight: 700 }}>Nama Mentor</td>
+                      <td style={{ width: '10px' }}>:</td>
+                      <td style={{ fontWeight: 800, color: '#0F3357' }}>{profile?.name}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 700 }}>NIP / ID</td>
+                      <td>:</td>
+                      <td>{profile?.nip || profile?.id?.slice(0, 8)}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 700 }}>Divisi & Penempatan</td>
+                      <td>:</td>
+                      <td>{profile?.divisi} - {profile?.asal_kantor}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 700 }}>No. Sertifikat</td>
+                      <td>:</td>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{myMentorCertificate.no_sertifikat}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Tabel Nilai 5 Pilar */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#0F3357', color: '#ffffff', textAlign: 'center' }}>
+                    <th style={{ padding: '10px', border: '1px solid #0F3357', width: '40px' }}>NO</th>
+                    <th style={{ padding: '10px', border: '1px solid #0F3357', textAlign: 'left' }}>ASPEK KOMPETENSI PEMBIMBINGAN</th>
+                    <th style={{ padding: '10px', border: '1px solid #0F3357', width: '100px' }}>NILAI (0-100)</th>
+                    <th style={{ padding: '10px', border: '1px solid #0F3357', width: '120px' }}>KUALIFIKASI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>1</td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
+                      <b>Kepemimpinan & Pembimbingan Mentee</b><br/>
+                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Kemampuan mengarahkan, membina, dan memotivasi peserta OJT</span>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
+                      {myMentorCertificate.nilai_kepemimpinan || 90}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                      {Number(myMentorCertificate.nilai_kepemimpinan || 90) >= 90 ? 'Sangat Memuaskan' : 'Memuaskan'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>2</td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
+                      <b>Tanggung Jawab & Kedisiplinan</b><br/>
+                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Konsistensi kehadiran bimbingan, review tugas, dan dedikasi</span>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
+                      {myMentorCertificate.nilai_kedisiplinan || 90}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                      {Number(myMentorCertificate.nilai_kedisiplinan || 90) >= 90 ? 'Sangat Memuaskan' : 'Memuaskan'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>3</td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
+                      <b>Komunikasi & Kerjasama Tim</b><br/>
+                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Koordinasi antar divisi, bimbingan berkala, dan evaluasi berkala</span>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
+                      {myMentorCertificate.nilai_komunikasi || 90}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                      {Number(myMentorCertificate.nilai_komunikasi || 90) >= 90 ? 'Sangat Memuaskan' : 'Memuaskan'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>4</td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
+                      <b>Penguasaan Teknis & Manajerial</b><br/>
+                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Penguasaan kurikulum industri, standar SOP, dan transfer ilmu</span>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
+                      {myMentorCertificate.nilai_teknis || 90}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                      {Number(myMentorCertificate.nilai_teknis || 90) >= 90 ? 'Sangat Memuaskan' : 'Memuaskan'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>5</td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
+                      <b>Efektivitas Pembinaan & Capaian Tim</b><br/>
+                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Kualitas karya peserta dan pencapaian target penugasan magang</span>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
+                      {myMentorCertificate.nilai_efektivitas || 90}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                      {Number(myMentorCertificate.nilai_efektivitas || 90) >= 90 ? 'Sangat Memuaskan' : 'Memuaskan'}
+                    </td>
+                  </tr>
+                  <tr style={{ backgroundColor: '#F9FAFB', fontWeight: 800 }}>
+                    <td colSpan={2} style={{ padding: '10px', border: '1px solid #D1D5DB', textAlign: 'right' }}>
+                      NILAI RATA-RATA TOTAL
+                    </td>
+                    <td style={{ padding: '10px', border: '1px solid #D1D5DB', textAlign: 'center', fontSize: '1rem', color: '#0F3357' }}>
+                      {Math.round(
+                        (Number(myMentorCertificate.nilai_kepemimpinan || 0) +
+                          Number(myMentorCertificate.nilai_kedisiplinan || 0) +
+                          Number(myMentorCertificate.nilai_komunikasi || 0) +
+                          Number(myMentorCertificate.nilai_teknis || 0) +
+                          Number(myMentorCertificate.nilai_efektivitas || 0)) / 5
+                      )}
+                    </td>
+                    <td style={{ padding: '10px', border: '1px solid #D1D5DB', textAlign: 'center', color: '#0F3357' }}>
+                      {myMentorCertificate.predikat || 'Sangat Memuaskan'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {myMentorCertificate.catatan && (
+                <div style={{ padding: '12px 16px', backgroundColor: '#F3F4F6', borderRadius: '8px', marginBottom: '30px', fontSize: '0.8rem', borderLeft: '4px solid #0F3357' }}>
+                  <p style={{ margin: 0, fontWeight: 700, color: '#374151' }}>Catatan Apresiasi Manajemen MDU:</p>
+                  <p style={{ margin: '4px 0 0 0', fontStyle: 'italic', color: '#4B5563' }}>"{myMentorCertificate.catatan}"</p>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
+                <div style={{ textAlign: 'center', width: '240px' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem' }}>Jakarta, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p style={{ margin: '2px 0 0 0', fontWeight: 700, fontSize: '0.85rem' }}>Manajemen Pusat MDU</p>
+                  <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src="/stamp-signature-cmo.png" alt="Stempel MDU" style={{ height: '70px', objectFit: 'contain' }} />
+                  </div>
+                  <p style={{ margin: 0, fontWeight: 800, textDecoration: 'underline', fontSize: '0.9rem' }}>Chief Management Officer</p>
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B7280' }}>PT Mandiri Digital Universe</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   )
 }

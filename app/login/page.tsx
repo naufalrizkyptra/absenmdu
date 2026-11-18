@@ -64,10 +64,25 @@ export default function Login() {
     setErrorMsg('')
     setSuccessMsg('')
 
-    // Trik Ninja: Kalau gak ada '@', anggep itu NIP anak OJT
-    let finalEmail = loginId
-    if (!loginId.includes('@')) {
-      finalEmail = `${loginId}@ojt.mdu.com`
+    // Resolusi fleksibel: Jika input tidak memiliki '@', cek apakah ada user dengan NIP ini
+    let finalEmail = loginId.trim()
+    if (!finalEmail.includes('@')) {
+      try {
+        const { data: userByNip } = await supabase
+          .from('users')
+          .select('email')
+          .eq('nip', finalEmail)
+          .maybeSingle()
+
+        if (userByNip?.email) {
+          finalEmail = userByNip.email
+        } else {
+          finalEmail = `${finalEmail}@ojt.mdu.com`
+        }
+      } catch (err) {
+        // Fallback jika lookup gagal
+        finalEmail = `${finalEmail}@ojt.mdu.com`
+      }
     }
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

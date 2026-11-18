@@ -18,6 +18,36 @@ import {
   deleteMentorEvaluation
 } from './actions'
 
+const DIVISION_OPTIONS = [
+  'Mentor',
+  'Marketing Komunikasi',
+  'Sosial Media Spesialis',
+  'Content Creator',
+  'Multimedia',
+  'Animator',
+  'Desain Komunikasi Visual',
+  'Teknologi Informasi & Software',
+  'Broadcasting & Media',
+  'Humas',
+  'Staff Human Capital',
+  'DICO',
+  'LPPM',
+  'Kemahasiswaan',
+  'Nusa Mandiri Center',
+  'Perpustakaan'
+]
+
+const OFFICE_OPTIONS = [
+  'Jatiwaringin',
+  'Margonda',
+  'BSD',
+  'BSI BSD',
+  'BSI Slipi',
+  'Rawamangun',
+  'BSI Ciledug',
+  'Bandung'
+]
+
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null)
   const [allOjt, setAllOjt] = useState<any[]>([])
@@ -45,7 +75,7 @@ export default function AdminDashboard() {
     nip: '',
     email: '',
     password: '',
-    divisi: 'Multimedia',
+    divisi: 'Mentor',
     asal_kantor: 'Jatiwaringin',
     no_telp: '',
     start_period: '',
@@ -198,7 +228,7 @@ export default function AdminDashboard() {
         nip: '',
         email: '',
         password: '',
-        divisi: 'Multimedia',
+        divisi: 'Mentor',
         asal_kantor: 'Jatiwaringin',
         no_telp: '',
         start_period: '',
@@ -940,7 +970,7 @@ export default function AdminDashboard() {
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black ${
                                     activeCount > 0 ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'
                                   }`}>
-                                    {activeCount} Mentee
+                                    {activeCount} Anak OJT
                                   </span>
                                 </td>
                                 <td className="p-3.5">
@@ -1216,28 +1246,58 @@ export default function AdminDashboard() {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Divisi Penugasan</label>
                   <select
-                    value={newMentorForm.divisi}
-                    onChange={(e) => setNewMentorForm({ ...newMentorForm, divisi: e.target.value })}
+                    value={DIVISION_OPTIONS.includes(newMentorForm.divisi) ? newMentorForm.divisi : '__custom__'}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setNewMentorForm({ ...newMentorForm, divisi: '' })
+                      } else {
+                        setNewMentorForm({ ...newMentorForm, divisi: e.target.value })
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Multimedia">Multimedia</option>
-                    <option value="Desain Komunikasi Visual">Desain Komunikasi Visual</option>
-                    <option value="Teknologi Informasi & Software">Teknologi Informasi & Software</option>
-                    <option value="Broadcasting & Media">Broadcasting & Media</option>
-                    <option value="Manajemen Bisnis & Pemasaran">Manajemen Bisnis & Pemasaran</option>
+                    {DIVISION_OPTIONS.map((div) => (
+                      <option key={div} value={div}>{div}</option>
+                    ))}
+                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
                   </select>
+                  {(!DIVISION_OPTIONS.includes(newMentorForm.divisi) || newMentorForm.divisi === '') && (
+                    <input
+                      type="text"
+                      placeholder="Ketik nama divisi baru..."
+                      value={newMentorForm.divisi}
+                      onChange={(e) => setNewMentorForm({ ...newMentorForm, divisi: e.target.value })}
+                      className="mt-2 w-full px-3.5 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Cabang Kantor</label>
                   <select
-                    value={newMentorForm.asal_kantor}
-                    onChange={(e) => setNewMentorForm({ ...newMentorForm, asal_kantor: e.target.value })}
+                    value={OFFICE_OPTIONS.includes(newMentorForm.asal_kantor) ? newMentorForm.asal_kantor : '__custom__'}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setNewMentorForm({ ...newMentorForm, asal_kantor: '' })
+                      } else {
+                        setNewMentorForm({ ...newMentorForm, asal_kantor: e.target.value })
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Jatiwaringin">Jatiwaringin</option>
-                    <option value="BSD">BSD</option>
-                    <option value="Bandung">Bandung</option>
+                    {OFFICE_OPTIONS.map((off) => (
+                      <option key={off} value={off}>{off}</option>
+                    ))}
+                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
                   </select>
+                  {(!OFFICE_OPTIONS.includes(newMentorForm.asal_kantor) || newMentorForm.asal_kantor === '') && (
+                    <input
+                      type="text"
+                      placeholder="Ketik nama cabang kantor..."
+                      value={newMentorForm.asal_kantor}
+                      onChange={(e) => setNewMentorForm({ ...newMentorForm, asal_kantor: e.target.value })}
+                      className="mt-2 w-full px-3.5 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -1349,22 +1409,60 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Divisi</label>
-                  <input
-                    type="text"
-                    value={editingMentor.divisi || ''}
-                    onChange={(e) => setEditingMentor({ ...editingMentor, divisi: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Divisi Penugasan</label>
+                  <select
+                    value={DIVISION_OPTIONS.includes(editingMentor.divisi) ? editingMentor.divisi : '__custom__'}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setEditingMentor({ ...editingMentor, divisi: '' })
+                      } else {
+                        setEditingMentor({ ...editingMentor, divisi: e.target.value })
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {DIVISION_OPTIONS.map((div) => (
+                      <option key={div} value={div}>{div}</option>
+                    ))}
+                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                  </select>
+                  {(!DIVISION_OPTIONS.includes(editingMentor.divisi) || editingMentor.divisi === '') && (
+                    <input
+                      type="text"
+                      placeholder="Ketik nama divisi..."
+                      value={editingMentor.divisi || ''}
+                      onChange={(e) => setEditingMentor({ ...editingMentor, divisi: e.target.value })}
+                      className="mt-2 w-full px-3.5 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Cabang Kantor</label>
-                  <input
-                    type="text"
-                    value={editingMentor.asal_kantor || ''}
-                    onChange={(e) => setEditingMentor({ ...editingMentor, asal_kantor: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <select
+                    value={OFFICE_OPTIONS.includes(editingMentor.asal_kantor) ? editingMentor.asal_kantor : '__custom__'}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setEditingMentor({ ...editingMentor, asal_kantor: '' })
+                      } else {
+                        setEditingMentor({ ...editingMentor, asal_kantor: e.target.value })
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {OFFICE_OPTIONS.map((off) => (
+                      <option key={off} value={off}>{off}</option>
+                    ))}
+                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                  </select>
+                  {(!OFFICE_OPTIONS.includes(editingMentor.asal_kantor) || editingMentor.asal_kantor === '') && (
+                    <input
+                      type="text"
+                      placeholder="Ketik nama cabang kantor..."
+                      value={editingMentor.asal_kantor || ''}
+                      onChange={(e) => setEditingMentor({ ...editingMentor, asal_kantor: e.target.value })}
+                      className="mt-2 w-full px-3.5 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                 </div>
               </div>
 

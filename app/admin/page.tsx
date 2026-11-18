@@ -867,13 +867,13 @@ export default function AdminDashboard() {
                         placeholder="Cari mentor (nama, NIP, email, divisi)..."
                         value={mentorSearch}
                         onChange={(e) => setMentorSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <select
                       value={mentorStatusFilter}
                       onChange={(e: any) => setMentorStatusFilter(e.target.value)}
-                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="all">Semua Status</option>
                       <option value="aktif">Mentor Aktif</option>
@@ -1024,13 +1024,13 @@ export default function AdminDashboard() {
                         placeholder="Cari mentor untuk dinilai..."
                         value={certSearch}
                         onChange={(e) => setCertSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <select
                       value={certStatusFilter}
                       onChange={(e: any) => setCertStatusFilter(e.target.value)}
-                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="all">Semua Status Sertifikat</option>
                       <option value="terbit">Sertifikat Terbit</option>
@@ -1184,7 +1184,7 @@ export default function AdminDashboard() {
                   placeholder="Contoh: Budi Santoso, S.Kom"
                   value={newMentorForm.name}
                   onChange={(e) => setNewMentorForm({ ...newMentorForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1197,7 +1197,7 @@ export default function AdminDashboard() {
                     placeholder="mentor@mdu.com"
                     value={newMentorForm.email}
                     onChange={(e) => setNewMentorForm({ ...newMentorForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -1207,7 +1207,7 @@ export default function AdminDashboard() {
                     placeholder="MTR2026001"
                     value={newMentorForm.nip}
                     onChange={(e) => setNewMentorForm({ ...newMentorForm, nip: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1218,7 +1218,7 @@ export default function AdminDashboard() {
                   <select
                     value={newMentorForm.divisi}
                     onChange={(e) => setNewMentorForm({ ...newMentorForm, divisi: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Multimedia">Multimedia</option>
                     <option value="Desain Komunikasi Visual">Desain Komunikasi Visual</option>
@@ -1232,7 +1232,7 @@ export default function AdminDashboard() {
                   <select
                     value={newMentorForm.asal_kantor}
                     onChange={(e) => setNewMentorForm({ ...newMentorForm, asal_kantor: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Jatiwaringin">Jatiwaringin</option>
                     <option value="BSD">BSD</option>
@@ -1248,7 +1248,7 @@ export default function AdminDashboard() {
                   placeholder="mentormdu2026!"
                   value={newMentorForm.password}
                   onChange={(e) => setNewMentorForm({ ...newMentorForm, password: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1259,7 +1259,7 @@ export default function AdminDashboard() {
                     type="date"
                     value={newMentorForm.start_period}
                     onChange={(e) => setNewMentorForm({ ...newMentorForm, start_period: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -1268,7 +1268,7 @@ export default function AdminDashboard() {
                     type="date"
                     value={newMentorForm.end_period}
                     onChange={(e) => setNewMentorForm({ ...newMentorForm, end_period: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1321,7 +1321,7 @@ export default function AdminDashboard() {
                   required
                   value={editingMentor.name || ''}
                   onChange={(e) => setEditingMentor({ ...editingMentor, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1333,7 +1333,7 @@ export default function AdminDashboard() {
                     required
                     value={editingMentor.email || ''}
                     onChange={(e) => setEditingMentor({ ...editingMentor, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -1342,7 +1342,7 @@ export default function AdminDashboard() {
                     type="text"
                     value={editingMentor.nip || ''}
                     onChange={(e) => setEditingMentor({ ...editingMentor, nip: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1354,7 +1354,7 @@ export default function AdminDashboard() {
                     type="text"
                     value={editingMentor.divisi || ''}
                     onChange={(e) => setEditingMentor({ ...editingMentor, divisi: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -1363,7 +1363,7 @@ export default function AdminDashboard() {
                     type="text"
                     value={editingMentor.asal_kantor || ''}
                     onChange={(e) => setEditingMentor({ ...editingMentor, asal_kantor: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1375,7 +1375,7 @@ export default function AdminDashboard() {
                     type="date"
                     value={editingMentor.start_period || ''}
                     onChange={(e) => setEditingMentor({ ...editingMentor, start_period: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -1384,7 +1384,7 @@ export default function AdminDashboard() {
                     type="date"
                     value={editingMentor.end_period || ''}
                     onChange={(e) => setEditingMentor({ ...editingMentor, end_period: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1430,7 +1430,7 @@ export default function AdminDashboard() {
                   placeholder="Masukkan password baru..."
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1487,7 +1487,7 @@ export default function AdminDashboard() {
                     placeholder="Contoh: 001/MDU-MENTOR/XI/2026"
                     value={evalForm.no_sertifikat}
                     onChange={(e) => setEvalForm({ ...evalForm, no_sertifikat: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                 </div>
 
@@ -1498,7 +1498,7 @@ export default function AdminDashboard() {
                       type="date"
                       value={evalForm.start_period}
                       onChange={(e) => setEvalForm({ ...evalForm, start_period: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1507,7 +1507,7 @@ export default function AdminDashboard() {
                       type="date"
                       value={evalForm.end_period}
                       onChange={(e) => setEvalForm({ ...evalForm, end_period: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -1529,7 +1529,7 @@ export default function AdminDashboard() {
                     max="100"
                     value={evalForm.nilai_kepemimpinan}
                     onChange={(e) => setEvalForm({ ...evalForm, nilai_kepemimpinan: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-800"
+                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
                   />
                 </div>
 
@@ -1545,7 +1545,7 @@ export default function AdminDashboard() {
                     max="100"
                     value={evalForm.nilai_kedisiplinan}
                     onChange={(e) => setEvalForm({ ...evalForm, nilai_kedisiplinan: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-800"
+                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
                   />
                 </div>
 
@@ -1561,7 +1561,7 @@ export default function AdminDashboard() {
                     max="100"
                     value={evalForm.nilai_komunikasi}
                     onChange={(e) => setEvalForm({ ...evalForm, nilai_komunikasi: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-800"
+                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
                   />
                 </div>
 
@@ -1577,7 +1577,7 @@ export default function AdminDashboard() {
                     max="100"
                     value={evalForm.nilai_teknis}
                     onChange={(e) => setEvalForm({ ...evalForm, nilai_teknis: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-800"
+                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
                   />
                 </div>
 
@@ -1593,7 +1593,7 @@ export default function AdminDashboard() {
                     max="100"
                     value={evalForm.nilai_efektivitas}
                     onChange={(e) => setEvalForm({ ...evalForm, nilai_efektivitas: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-800"
+                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
                   />
                 </div>
               </div>
@@ -1620,7 +1620,7 @@ export default function AdminDashboard() {
                   placeholder="Contoh: Berdedikasi tinggi dalam membimbing mentee multimedia hingga menyelesaikan seluruh proyek tepat waktu."
                   value={evalForm.catatan}
                   onChange={(e) => setEvalForm({ ...evalForm, catatan: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 

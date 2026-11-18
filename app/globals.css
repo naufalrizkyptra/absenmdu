@@ -25,6 +25,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Pastikan elemen form input selalu memiliki teks gelap yang kontras dan terbaca */
+input, select, textarea {
+  color: #0f172a;
+}
+
 /* ============================================
    Custom Loading Animations for MDU Portal
    ============================================ */

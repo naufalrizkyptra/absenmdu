@@ -197,85 +197,149 @@ export async function archiveMentorAccount(mentorId: string) {
   }
 }
 
-// 6. INPUT / UPDATE EVALUASI KINERJA & SERTIFIKAT MENTOR
+// 6. INPUT / UPDATE EVALUASI KINERJA & SERTIFIKAT MENTOR (PERSIS DENGAN FORMAT OJT)
 export async function submitMentorEvaluation(gradeData: {
   mentor_id: string
   admin_id?: string
   no_sertifikat: string
+  sebagai?: string
   start_period?: string
   end_period?: string
-  nilai_kepemimpinan: number
-  nilai_kedisiplinan: number
-  nilai_komunikasi: number
-  nilai_teknis: number
-  nilai_efektivitas: number
+  q1_waktu?: number
+  q2_sikap?: number
+  q3_tanggung_jawab?: number
+  q4_kehadiran?: number
+  q5_kemampuan?: number
+  q6_keterampilan?: number
+  q7_kualitas?: number
+  q8_komunikasi?: number
+  q9_kerjasama?: number
+  q10_inisiatif?: number
+  q11_percaya_diri?: number
+  q12_patuh_aturan?: number
+  q13_penampilan?: number
   predikat?: string
   catatan?: string
+  // Backwards compatibility
+  nilai_kepemimpinan?: number
+  nilai_kedisiplinan?: number
+  nilai_komunikasi?: number
+  nilai_teknis?: number
+  nilai_efektivitas?: number
 }) {
   try {
     if (!gradeData.mentor_id) throw new Error('ID Mentor diperlukan')
 
-    // Hitung rata-rata jika predikat belum ditentukan
-    const avg = Math.round(
-      (Number(gradeData.nilai_kepemimpinan || 0) +
-        Number(gradeData.nilai_kedisiplinan || 0) +
-        Number(gradeData.nilai_komunikasi || 0) +
-        Number(gradeData.nilai_teknis || 0) +
-        Number(gradeData.nilai_efektivitas || 0)) /
-        5
-    )
+    const q1 = Number(gradeData.q1_waktu ?? gradeData.nilai_kedisiplinan ?? 90)
+    const q2 = Number(gradeData.q2_sikap ?? gradeData.nilai_kedisiplinan ?? 90)
+    const q3 = Number(gradeData.q3_tanggung_jawab ?? gradeData.nilai_kepemimpinan ?? 90)
+    const q4 = Number(gradeData.q4_kehadiran ?? gradeData.nilai_kedisiplinan ?? 90)
+    const q5 = Number(gradeData.q5_kemampuan ?? gradeData.nilai_teknis ?? 90)
+    const q6 = Number(gradeData.q6_keterampilan ?? gradeData.nilai_teknis ?? 90)
+    const q7 = Number(gradeData.q7_kualitas ?? gradeData.nilai_efektivitas ?? 90)
+    const q8 = Number(gradeData.q8_komunikasi ?? gradeData.nilai_komunikasi ?? 90)
+    const q9 = Number(gradeData.q9_kerjasama ?? gradeData.nilai_komunikasi ?? 90)
+    const q10 = Number(gradeData.q10_inisiatif ?? gradeData.nilai_kepemimpinan ?? 90)
+    const q11 = Number(gradeData.q11_percaya_diri ?? gradeData.nilai_kepemimpinan ?? 90)
+    const q12 = Number(gradeData.q12_patuh_aturan ?? gradeData.nilai_kedisiplinan ?? 90)
+    const q13 = Number(gradeData.q13_penampilan ?? gradeData.nilai_kedisiplinan ?? 90)
 
-    let finalPredikat = gradeData.predikat
-    if (!finalPredikat) {
-      if (avg >= 90) finalPredikat = 'Sangat Memuaskan'
-      else if (avg >= 80) finalPredikat = 'Memuaskan'
-      else if (avg >= 70) finalPredikat = 'Baik'
-      else finalPredikat = 'Cukup'
+    const total13 = q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9 + q10 + q11 + q12 + q13
+    const avgNum = total13 / 13
+    const avgStr = avgNum.toFixed(1)
+
+    const getLetterGrade = (avg: number) => {
+      if (avg >= 96) return 'A+'
+      if (avg >= 91) return 'A'
+      if (avg >= 86) return 'A-'
+      if (avg >= 81) return 'B+'
+      if (avg >= 76) return 'B'
+      if (avg >= 71) return 'B-'
+      if (avg >= 66) return 'C'
+      return 'D'
     }
 
-    const payload = {
-      mentor_id: gradeData.mentor_id,
-      admin_id: gradeData.admin_id || null,
+    const finalPredikat = gradeData.predikat || getLetterGrade(avgNum)
+
+    // 1. Simpan ke ojt_grades (Relasional utama yang digunakan sertifikat)
+    const ojtGradePayload: any = {
+      user_id: gradeData.mentor_id,
       no_sertifikat: gradeData.no_sertifikat ? gradeData.no_sertifikat.trim() : null,
-      start_period: gradeData.start_period || null,
-      end_period: gradeData.end_period || null,
-      nilai_kepemimpinan: Number(gradeData.nilai_kepemimpinan || 0),
-      nilai_kedisiplinan: Number(gradeData.nilai_kedisiplinan || 0),
-      nilai_komunikasi: Number(gradeData.nilai_komunikasi || 0),
-      nilai_teknis: Number(gradeData.nilai_teknis || 0),
-      nilai_efektivitas: Number(gradeData.nilai_efektivitas || 0),
-      predikat: finalPredikat,
-      catatan: gradeData.catatan ? gradeData.catatan.trim() : null,
-      updated_at: new Date().toISOString()
+      q1_waktu: q1,
+      q2_sikap: q2,
+      q3_tanggung_jawab: q3,
+      q4_kehadiran: q4,
+      q5_kemampuan: q5,
+      q6_keterampilan: q6,
+      q7_kualitas: q7,
+      q8_komunikasi: q8,
+      q9_kerjasama: q9,
+      q10_inisiatif: q10,
+      q11_percaya_diri: q11,
+      q12_patuh_aturan: q12,
+      q13_penampilan: q13
     }
 
-    // Cek apakah sudah ada evaluasi sebelumnya untuk mentor ini
-    const { data: existing } = await supabaseAdmin
-      .from('mentor_grades')
+    const { data: existingOjt } = await supabaseAdmin
+      .from('ojt_grades')
       .select('id')
-      .eq('mentor_id', gradeData.mentor_id)
+      .eq('user_id', gradeData.mentor_id)
       .maybeSingle()
 
-    if (existing) {
-      const { error } = await supabaseAdmin
-        .from('mentor_grades')
-        .update(payload)
-        .eq('id', existing.id)
-      if (error) throw error
+    if (existingOjt) {
+      const { error: ojtErr } = await supabaseAdmin
+        .from('ojt_grades')
+        .update(ojtGradePayload)
+        .eq('id', existingOjt.id)
+      if (ojtErr) throw ojtErr
     } else {
-      const { error } = await supabaseAdmin.from('mentor_grades').insert([payload])
-      if (error) throw error
+      const { error: ojtErr } = await supabaseAdmin
+        .from('ojt_grades')
+        .insert([ojtGradePayload])
+      if (ojtErr) throw ojtErr
     }
 
-    // Sinkronkan periode bimbingan ke tabel users jika ada
-    if (gradeData.start_period || gradeData.end_period) {
-      await supabaseAdmin
-        .from('users')
-        .update({
-          start_period: gradeData.start_period || null,
-          end_period: gradeData.end_period || null
-        })
-        .eq('id', gradeData.mentor_id)
+    // 2. Simpan pilihan peran 'sebagai' & periode di tabel users
+    await supabaseAdmin
+      .from('users')
+      .update({
+        status: gradeData.sebagai || 'Mentor',
+        start_period: gradeData.start_period || null,
+        end_period: gradeData.end_period || null
+      })
+      .eq('id', gradeData.mentor_id)
+
+    // 3. Simpan juga ke tabel mentor_grades jika ada
+    try {
+      const mentorGradePayload = {
+        mentor_id: gradeData.mentor_id,
+        admin_id: gradeData.admin_id || null,
+        no_sertifikat: gradeData.no_sertifikat ? gradeData.no_sertifikat.trim() : null,
+        start_period: gradeData.start_period || null,
+        end_period: gradeData.end_period || null,
+        nilai_kepemimpinan: q3,
+        nilai_kedisiplinan: q1,
+        nilai_komunikasi: q8,
+        nilai_teknis: q5,
+        nilai_efektivitas: q7,
+        predikat: finalPredikat,
+        catatan: gradeData.catatan ? gradeData.catatan.trim() : null,
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: existingMentorGrade } = await supabaseAdmin
+        .from('mentor_grades')
+        .select('id')
+        .eq('mentor_id', gradeData.mentor_id)
+        .maybeSingle()
+
+      if (existingMentorGrade) {
+        await supabaseAdmin.from('mentor_grades').update(mentorGradePayload).eq('id', existingMentorGrade.id)
+      } else {
+        await supabaseAdmin.from('mentor_grades').insert([mentorGradePayload])
+      }
+    } catch (ignore) {
+      // Abaikan jika tabel mentor_grades belum termigrasi
     }
 
     return { success: true, message: 'Evaluasi & sertifikat mentor berhasil disimpan.' }
@@ -288,12 +352,9 @@ export async function submitMentorEvaluation(gradeData: {
 // 7. BATALKAN / HAPUS EVALUASI & SERTIFIKAT MENTOR
 export async function deleteMentorEvaluation(mentorId: string) {
   try {
-    const { error } = await supabaseAdmin
-      .from('mentor_grades')
-      .delete()
-      .eq('mentor_id', mentorId)
+    await supabaseAdmin.from('ojt_grades').delete().eq('user_id', mentorId)
+    await supabaseAdmin.from('mentor_grades').delete().eq('mentor_id', mentorId)
 
-    if (error) throw error
     return { success: true, message: 'Evaluasi & sertifikat mentor berhasil dibatalkan.' }
   } catch (error: any) {
     console.error('Error deleteMentorEvaluation:', error)
@@ -312,10 +373,11 @@ export async function getMentorCertificateData(mentorId: string) {
 
     if (mentorErr || !mentor) throw new Error('Data mentor tidak ditemukan')
 
+    // Prioritaskan dari ojt_grades
     const { data: grades } = await supabaseAdmin
-      .from('mentor_grades')
+      .from('ojt_grades')
       .select('*')
-      .eq('mentor_id', mentorId)
+      .eq('user_id', mentorId)
       .maybeSingle()
 
     return {

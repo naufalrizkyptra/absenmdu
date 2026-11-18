@@ -48,6 +48,32 @@ const OFFICE_OPTIONS = [
   'Bandung'
 ]
 
+const ROLE_OPTIONS = [
+  'Mentor',
+  'Mentor Pembimbing',
+  'Marketing Komunikasi',
+  'Sosial Media Spesialis',
+  'Content Creator',
+  'Staff Human Capital',
+  'DICO'
+]
+
+const OJT_EVALUATION_CRITERIA = [
+  { key: 'q1', field: 'q1_waktu', label: 'Disiplin Waktu & Kehadiran', desc: 'Ketepatan waktu dan komitmen kehadiran' },
+  { key: 'q2', field: 'q2_sikap', label: 'Etika & Sikap Perilaku', desc: 'Sopan santun, integritas, dan etika profesional' },
+  { key: 'q3', field: 'q3_tanggung_jawab', label: 'Tanggung Jawab Penugasan', desc: 'Penyelesaian amanah dan bimbingan' },
+  { key: 'q4', field: 'q4_kehadiran', label: 'Konsistensi Presensi', desc: 'Keaktifan presensi dan kehadiran berkala' },
+  { key: 'q5', field: 'q5_kemampuan', label: 'Kemampuan Kerja & Problem Solving', desc: 'Daya analisis dan pemecahan kendala kerja' },
+  { key: 'q6', field: 'q6_keterampilan', label: 'Keterampilan Teknis & Kreativitas', desc: 'Penguasaan keahlian bidang dan inovasi ide' },
+  { key: 'q7', field: 'q7_kualitas', label: 'Kualitas Hasil Pekerjaan', desc: 'Output bimbingan dan standar mutu hasil kerja' },
+  { key: 'q8', field: 'q8_komunikasi', label: 'Komunikasi & Koordinasi', desc: 'Penyampaian informasi dan koordinasi tim' },
+  { key: 'q9', field: 'q9_kerjasama', label: 'Kerjasama Tim', desc: 'Kolaborasi antar divisi dan suportivitas' },
+  { key: 'q10', field: 'q10_inisiatif', label: 'Inisiatif & Keaktifan', desc: 'Proaktif dalam pengembangan dan mentoring' },
+  { key: 'q11', field: 'q11_percaya_diri', label: 'Percaya Diri & Kemandirian', desc: 'Kemandirian eksekusi dan kepercayaan diri' },
+  { key: 'q12', field: 'q12_patuh_aturan', label: 'Kepatuhan Tata Tertib MDU', desc: 'Ketaatan pada SOP, regulasi, dan tata tertib' },
+  { key: 'q13', field: 'q13_penampilan', label: 'Kerapian & Penampilan', desc: 'Kerapian berpakaian dan standar performa' }
+]
+
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null)
   const [allOjt, setAllOjt] = useState<any[]>([])
@@ -93,7 +119,7 @@ export default function AdminDashboard() {
   const [newPassword, setNewPassword] = useState('')
   const [isResettingPassword, setIsResettingPassword] = useState(false)
 
-  // STATE MODAL EVALUASI & SERTIFIKAT MENTOR
+  // STATE MODAL EVALUASI & SERTIFIKAT MENTOR (PERSIS DENGAN FORMAT OJT)
   const [showEvalModal, setShowEvalModal] = useState(false)
   const [evaluatingMentor, setEvaluatingMentor] = useState<any>(null)
   const [isSubmittingEval, setIsSubmittingEval] = useState(false)
@@ -101,13 +127,21 @@ export default function AdminDashboard() {
     no_sertifikat: '',
     start_period: '',
     end_period: '',
-    nilai_kepemimpinan: 90,
-    nilai_kedisiplinan: 90,
-    nilai_komunikasi: 90,
-    nilai_teknis: 90,
-    nilai_efektivitas: 90,
-    catatan: '',
-    predikat: 'Sangat Memuaskan'
+    sebagai: 'Mentor',
+    q1: 90,
+    q2: 90,
+    q3: 90,
+    q4: 90,
+    q5: 90,
+    q6: 90,
+    q7: 90,
+    q8: 90,
+    q9: 90,
+    q10: 90,
+    q11: 90,
+    q12: 90,
+    q13: 90,
+    catatan: ''
   })
 
   // STATE CETAK SERTIFIKAT MENTOR RENDER DOM
@@ -142,19 +176,67 @@ export default function AdminDashboard() {
         .select('*')
         .order('name', { ascending: true })
 
+      const mentors = (usersData || []).filter(u => u.role === 'mentor')
       if (usersData) {
         setAllOjt(usersData.filter(u => u.role === 'ojt'))
-        setAllMentors(usersData.filter(u => u.role === 'mentor'))
+        setAllMentors(mentors)
       }
 
-      // 3. Tarik data mentor_grades
+      // 3. Tarik data nilai mentor dari ojt_grades dan mentor_grades
+      const mentorIds = mentors.map(m => m.id)
+      const { data: ojtGradesData } = mentorIds.length > 0
+        ? await supabase.from('ojt_grades').select('*').in('user_id', mentorIds)
+        : { data: [] }
       const { data: gradesData } = await supabase
         .from('mentor_grades')
         .select('*')
 
-      if (gradesData) {
-        setMentorGrades(gradesData)
-      }
+      const combinedMap = new Map<string, any>()
+      ;(gradesData || []).forEach(mg => {
+        combinedMap.set(mg.mentor_id, {
+          ...mg,
+          q1_waktu: mg.nilai_kedisiplinan ?? 90,
+          q2_sikap: mg.nilai_kepemimpinan ?? 90,
+          q3_tanggung_jawab: mg.nilai_kedisiplinan ?? 90,
+          q4_kehadiran: mg.nilai_kedisiplinan ?? 90,
+          q5_kemampuan: mg.nilai_teknis ?? 90,
+          q6_keterampilan: mg.nilai_teknis ?? 90,
+          q7_kualitas: mg.nilai_efektivitas ?? 90,
+          q8_komunikasi: mg.nilai_komunikasi ?? 90,
+          q9_kerjasama: mg.nilai_komunikasi ?? 90,
+          q10_inisiatif: mg.nilai_kepemimpinan ?? 90,
+          q11_percaya_diri: mg.nilai_kepemimpinan ?? 90,
+          q12_patuh_aturan: mg.nilai_kedisiplinan ?? 90,
+          q13_penampilan: mg.nilai_kedisiplinan ?? 90,
+          sebagai: mg.sebagai || 'Mentor'
+        })
+      })
+
+      ;(ojtGradesData || []).forEach(og => {
+        const existing = combinedMap.get(og.user_id) || {}
+        combinedMap.set(og.user_id, {
+          ...existing,
+          ...og,
+          mentor_id: og.user_id,
+          no_sertifikat: og.no_sertifikat || existing.no_sertifikat || '',
+          q1_waktu: og.q1_waktu ?? existing.q1_waktu ?? 90,
+          q2_sikap: og.q2_sikap ?? existing.q2_sikap ?? 90,
+          q3_tanggung_jawab: og.q3_tanggung_jawab ?? existing.q3_tanggung_jawab ?? 90,
+          q4_kehadiran: og.q4_kehadiran ?? existing.q4_kehadiran ?? 90,
+          q5_kemampuan: og.q5_kemampuan ?? existing.q5_kemampuan ?? 90,
+          q6_keterampilan: og.q6_keterampilan ?? existing.q6_keterampilan ?? 90,
+          q7_kualitas: og.q7_kualitas ?? existing.q7_kualitas ?? 90,
+          q8_komunikasi: og.q8_komunikasi ?? existing.q8_komunikasi ?? 90,
+          q9_kerjasama: og.q9_kerjasama ?? existing.q9_kerjasama ?? 90,
+          q10_inisiatif: og.q10_inisiatif ?? existing.q10_inisiatif ?? 90,
+          q11_percaya_diri: og.q11_percaya_diri ?? existing.q11_percaya_diri ?? 90,
+          q12_patuh_aturan: og.q12_patuh_aturan ?? existing.q12_patuh_aturan ?? 90,
+          q13_penampilan: og.q13_penampilan ?? existing.q13_penampilan ?? 90,
+          sebagai: og.sebagai || existing.sebagai || 'Mentor'
+        })
+      })
+
+      setMentorGrades(Array.from(combinedMap.values()))
     } catch (err) {
       console.error('Error fetching admin data:', err)
     } finally {
@@ -189,21 +271,44 @@ export default function AdminDashboard() {
     return allOjt.filter(o => o.mentor_id === mentorId && o.status_ojt !== 'selesai').length
   }
 
-  // HITUNG PREDIKAT OTOMATIS
-  const calculateAverage = (form: typeof evalForm) => {
-    const sum = Number(form.nilai_kepemimpinan || 0) +
-      Number(form.nilai_kedisiplinan || 0) +
-      Number(form.nilai_komunikasi || 0) +
-      Number(form.nilai_teknis || 0) +
-      Number(form.nilai_efektivitas || 0)
-    return Math.round(sum / 5)
+  // HITUNG RATA-RATA & PREDIKAT 13 KRITERIA IDENTIK OJT
+  const calculateAverage13 = (g: any) => {
+    if (!g) return '0.0'
+    const q1 = Number(g.q1 ?? g.q1_waktu ?? 0)
+    const q2 = Number(g.q2 ?? g.q2_sikap ?? 0)
+    const q3 = Number(g.q3 ?? g.q3_tanggung_jawab ?? 0)
+    const q4 = Number(g.q4 ?? g.q4_kehadiran ?? 0)
+    const q5 = Number(g.q5 ?? g.q5_kemampuan ?? 0)
+    const q6 = Number(g.q6 ?? g.q6_keterampilan ?? 0)
+    const q7 = Number(g.q7 ?? g.q7_kualitas ?? 0)
+    const q8 = Number(g.q8 ?? g.q8_komunikasi ?? 0)
+    const q9 = Number(g.q9 ?? g.q9_kerjasama ?? 0)
+    const q10 = Number(g.q10 ?? g.q10_inisiatif ?? 0)
+    const q11 = Number(g.q11 ?? g.q11_percaya_diri ?? 0)
+    const q12 = Number(g.q12 ?? g.q12_patuh_aturan ?? 0)
+    const q13 = Number(g.q13 ?? g.q13_penampilan ?? 0)
+    const total = q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9 + q10 + q11 + q12 + q13
+    return (total / 13).toFixed(1)
   }
 
-  const getPredicateLabel = (avg: number) => {
-    if (avg >= 90) return 'Sangat Memuaskan'
-    if (avg >= 80) return 'Memuaskan'
-    if (avg >= 70) return 'Baik'
-    return 'Cukup'
+  const getLetterGrade = (avg: number) => {
+    if (avg >= 96) return 'A+'
+    if (avg >= 91) return 'A'
+    if (avg >= 86) return 'A-'
+    if (avg >= 81) return 'B+'
+    if (avg >= 76) return 'B'
+    if (avg >= 71) return 'B-'
+    if (avg >= 66) return 'C'
+    return 'D'
+  }
+
+  const setQuickGrades = (score: number) => {
+    setEvalForm(prev => ({
+      ...prev,
+      q1: score, q2: score, q3: score, q4: score,
+      q5: score, q6: score, q7: score, q8: score,
+      q9: score, q10: score, q11: score, q12: score, q13: score
+    }))
   }
 
   // HANDLER REGISTRASI MENTOR
@@ -358,10 +463,10 @@ export default function AdminDashboard() {
     }
   }
 
-  // BUKA MODAL EVALUASI MENTOR
+  // BUKA MODAL EVALUASI MENTOR (13 ASPEK PERSIS OJT)
   const openEvaluationModal = (mentor: any) => {
     setEvaluatingMentor(mentor)
-    const existingGrade = mentorGrades.find(g => g.mentor_id === mentor.id)
+    const existingGrade = mentorGrades.find(g => g.mentor_id === mentor.id || g.user_id === mentor.id)
 
     // Cari nomor sertifikat otomatis jika belum ada
     const currentYear = new Date().getFullYear()
@@ -371,13 +476,21 @@ export default function AdminDashboard() {
       no_sertifikat: autoNo,
       start_period: existingGrade?.start_period || mentor.start_period || '',
       end_period: existingGrade?.end_period || mentor.end_period || '',
-      nilai_kepemimpinan: Number(existingGrade?.nilai_kepemimpinan ?? 90),
-      nilai_kedisiplinan: Number(existingGrade?.nilai_kedisiplinan ?? 90),
-      nilai_komunikasi: Number(existingGrade?.nilai_komunikasi ?? 90),
-      nilai_teknis: Number(existingGrade?.nilai_teknis ?? 90),
-      nilai_efektivitas: Number(existingGrade?.nilai_efektivitas ?? 90),
-      catatan: existingGrade?.catatan || '',
-      predikat: existingGrade?.predikat || 'Sangat Memuaskan'
+      sebagai: existingGrade?.sebagai || mentor.status || 'Mentor',
+      q1: Number(existingGrade?.q1_waktu ?? existingGrade?.nilai_kedisiplinan ?? 90),
+      q2: Number(existingGrade?.q2_sikap ?? existingGrade?.nilai_kepemimpinan ?? 90),
+      q3: Number(existingGrade?.q3_tanggung_jawab ?? existingGrade?.nilai_kedisiplinan ?? 90),
+      q4: Number(existingGrade?.q4_kehadiran ?? existingGrade?.nilai_kedisiplinan ?? 90),
+      q5: Number(existingGrade?.q5_kemampuan ?? existingGrade?.nilai_teknis ?? 90),
+      q6: Number(existingGrade?.q6_keterampilan ?? existingGrade?.nilai_teknis ?? 90),
+      q7: Number(existingGrade?.q7_kualitas ?? existingGrade?.nilai_efektivitas ?? 90),
+      q8: Number(existingGrade?.q8_komunikasi ?? existingGrade?.nilai_komunikasi ?? 90),
+      q9: Number(existingGrade?.q9_kerjasama ?? existingGrade?.nilai_komunikasi ?? 90),
+      q10: Number(existingGrade?.q10_inisiatif ?? existingGrade?.nilai_kepemimpinan ?? 90),
+      q11: Number(existingGrade?.q11_percaya_diri ?? existingGrade?.nilai_kepemimpinan ?? 90),
+      q12: Number(existingGrade?.q12_patuh_aturan ?? existingGrade?.nilai_kedisiplinan ?? 90),
+      q13: Number(existingGrade?.q13_penampilan ?? existingGrade?.nilai_kedisiplinan ?? 90),
+      catatan: existingGrade?.catatan || ''
     })
     setShowEvalModal(true)
   }
@@ -395,8 +508,8 @@ export default function AdminDashboard() {
     setIsSubmittingEval(true)
     const toastId = toast.loading(`Menyimpan evaluasi & sertifikat untuk ${evaluatingMentor.name}...`)
 
-    const avg = calculateAverage(evalForm)
-    const pred = getPredicateLabel(avg)
+    const avg = calculateAverage13(evalForm)
+    const pred = getLetterGrade(parseFloat(avg))
 
     const res = await submitMentorEvaluation({
       mentor_id: evaluatingMentor.id,
@@ -404,11 +517,20 @@ export default function AdminDashboard() {
       no_sertifikat: evalForm.no_sertifikat.trim(),
       start_period: evalForm.start_period,
       end_period: evalForm.end_period,
-      nilai_kepemimpinan: evalForm.nilai_kepemimpinan,
-      nilai_kedisiplinan: evalForm.nilai_kedisiplinan,
-      nilai_komunikasi: evalForm.nilai_komunikasi,
-      nilai_teknis: evalForm.nilai_teknis,
-      nilai_efektivitas: evalForm.nilai_efektivitas,
+      sebagai: evalForm.sebagai,
+      q1_waktu: evalForm.q1,
+      q2_sikap: evalForm.q2,
+      q3_tanggung_jawab: evalForm.q3,
+      q4_kehadiran: evalForm.q4,
+      q5_kemampuan: evalForm.q5,
+      q6_keterampilan: evalForm.q6,
+      q7_kualitas: evalForm.q7,
+      q8_komunikasi: evalForm.q8,
+      q9_kerjasama: evalForm.q9,
+      q10_inisiatif: evalForm.q10,
+      q11_percaya_diri: evalForm.q11,
+      q12_patuh_aturan: evalForm.q12,
+      q13_penampilan: evalForm.q13,
       predikat: pred,
       catatan: evalForm.catatan
     })
@@ -450,7 +572,7 @@ export default function AdminDashboard() {
 
   // MESIN CETAK SERTIFIKAT PDF MENTOR
   const handleDownloadCertificate = async (mentor: any) => {
-    const grade = mentorGrades.find(g => g.mentor_id === mentor.id)
+    const grade = mentorGrades.find(g => g.mentor_id === mentor.id || g.user_id === mentor.id)
     if (!grade || !grade.no_sertifikat) {
       toast.warning('Mentor belum memiliki nilai/sertifikat yang diterbitkan.')
       return
@@ -1090,15 +1212,10 @@ export default function AdminDashboard() {
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                           {filteredCertMentors.map((mentor) => {
-                            const grade = mentorGrades.find(g => g.mentor_id === mentor.id)
+                            const grade = mentorGrades.find(g => g.mentor_id === mentor.id || g.user_id === mentor.id)
                             const hasCert = Boolean(grade && grade.no_sertifikat)
-                            const avgScore = grade ? Math.round(
-                              (Number(grade.nilai_kepemimpinan || 0) +
-                                Number(grade.nilai_kedisiplinan || 0) +
-                                Number(grade.nilai_komunikasi || 0) +
-                                Number(grade.nilai_teknis || 0) +
-                                Number(grade.nilai_efektivitas || 0)) / 5
-                            ) : null
+                            const avgScore = grade && hasCert ? calculateAverage13(grade) : null
+                            const letterPred = avgScore !== null ? getLetterGrade(parseFloat(avgScore)) : null
 
                             return (
                               <tr key={mentor.id} className="hover:bg-slate-50/80 transition-colors">
@@ -1129,7 +1246,7 @@ export default function AdminDashboard() {
                                 <td className="p-3.5">
                                   {hasCert ? (
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700">
-                                      🏆 {grade.predikat || 'Memuaskan'}
+                                      🏆 {letterPred || grade.predikat || 'A'}
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700">
@@ -1554,7 +1671,7 @@ export default function AdminDashboard() {
       )}
 
       {/* ======================================================== */}
-      {/* MODAL 4: EVALUASI & SERTIFIKAT MENTOR */}
+      {/* MODAL 4: EVALUASI & SERTIFIKAT MENTOR (13 ASPEK PERSIS OJT) */}
       {/* ======================================================== */}
       {showEvalModal && evaluatingMentor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
@@ -1563,7 +1680,7 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="text-lg font-black text-slate-800">Evaluasi Kinerja & Sertifikat Mentor</h3>
                 <p className="text-xs text-slate-500">
-                  Penilaian 5 pilar bimbingan resmi untuk <b>{evaluatingMentor.name}</b>.
+                  Penilaian 13 kriteria evaluasi bimbingan resmi untuk <b>{evaluatingMentor.name}</b>.
                 </p>
               </div>
               <button
@@ -1575,18 +1692,48 @@ export default function AdminDashboard() {
             </div>
 
             <form onSubmit={handleSaveEvaluation} className="space-y-5 mt-4">
-              {/* NOMOR SERTIFIKAT & PERIODE */}
+              {/* NOMOR SERTIFIKAT, PERAN & PERIODE */}
               <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100 space-y-3">
-                <div>
-                  <label className="block text-xs font-black text-blue-900 mb-1">Nomor Sertifikat Resmi *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: 001/MDU-MENTOR/XI/2026"
-                    value={evalForm.no_sertifikat}
-                    onChange={(e) => setEvalForm({ ...evalForm, no_sertifikat: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-black text-blue-900 mb-1">Nomor Sertifikat Resmi *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: 001/MDU-MENTOR/XI/2026"
+                      value={evalForm.no_sertifikat}
+                      onChange={(e) => setEvalForm({ ...evalForm, no_sertifikat: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-blue-900 mb-1">Peran / Sebagai</label>
+                    <select
+                      value={ROLE_OPTIONS.includes(evalForm.sebagai) ? evalForm.sebagai : '__custom__'}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setEvalForm({ ...evalForm, sebagai: '' })
+                        } else {
+                          setEvalForm({ ...evalForm, sebagai: e.target.value })
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {ROLE_OPTIONS.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                      <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                    </select>
+                    {(!ROLE_OPTIONS.includes(evalForm.sebagai) || evalForm.sebagai === '') && (
+                      <input
+                        type="text"
+                        placeholder="Ketik peran (contoh: Mentor Pembimbing)..."
+                        value={evalForm.sebagai}
+                        onChange={(e) => setEvalForm({ ...evalForm, sebagai: e.target.value })}
+                        className="mt-2 w-full px-3.5 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1611,88 +1758,47 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* 5 PILAR PENILAIAN */}
+              {/* 13 ASPEK PENILAIAN */}
               <div className="space-y-3">
-                <p className="text-xs font-black uppercase tracking-wider text-slate-400">5 Pilar Evaluasi Kinerja (Skala 0 - 100)</p>
-
-                {/* 1. Kepemimpinan & Pembimbingan */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">1. Kepemimpinan & Pembimbingan Mentee</p>
-                    <p className="text-[10px] text-slate-400">Kemampuan mengarahkan dan memotivasi anak OJT</p>
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-1 pb-1">
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-400">13 Aspek Penilaian (Skala 0 - 100)</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-400 mr-1">Isi Cepat:</span>
+                    {[80, 85, 90, 95, 100].map(val => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setQuickGrades(val)}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 font-bold rounded-lg text-[11px] transition-all"
+                      >
+                        {val}
+                      </button>
+                    ))}
                   </div>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={evalForm.nilai_kepemimpinan}
-                    onChange={(e) => setEvalForm({ ...evalForm, nilai_kepemimpinan: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
-                  />
                 </div>
 
-                {/* 2. Tanggung Jawab & Kedisiplinan */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">2. Tanggung Jawab & Kedisiplinan</p>
-                    <p className="text-[10px] text-slate-400">Ketepatan kehadiran, monitoring tugas, dan integritas kerja</p>
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={evalForm.nilai_kedisiplinan}
-                    onChange={(e) => setEvalForm({ ...evalForm, nilai_kedisiplinan: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
-                  />
-                </div>
-
-                {/* 3. Komunikasi & Kerjasama */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">3. Komunikasi & Kerjasama Tim</p>
-                    <p className="text-[10px] text-slate-400">Kolaborasi antar divisi dan feedback konstruktif ke mentee</p>
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={evalForm.nilai_komunikasi}
-                    onChange={(e) => setEvalForm({ ...evalForm, nilai_komunikasi: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
-                  />
-                </div>
-
-                {/* 4. Penguasaan Teknis & Manajerial */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">4. Penguasaan Teknis & Manajerial</p>
-                    <p className="text-[10px] text-slate-400">Keahlian bidang kejuruan dan transfer ilmu yang efektif</p>
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={evalForm.nilai_teknis}
-                    onChange={(e) => setEvalForm({ ...evalForm, nilai_teknis: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
-                  />
-                </div>
-
-                {/* 5. Efektivitas Pembinaan & Capaian Tim */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">5. Efektivitas Pembinaan & Capaian Tim</p>
-                    <p className="text-[10px] text-slate-400">Tingkat keberhasilan penyelesaian proyek bimbingan OJT</p>
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={evalForm.nilai_efektivitas}
-                    onChange={(e) => setEvalForm({ ...evalForm, nilai_efektivitas: Number(e.target.value) })}
-                    className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900"
-                  />
+                <div className="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
+                  {OJT_EVALUATION_CRITERIA.map((crit, idx) => (
+                    <div key={crit.key} className="bg-slate-50 p-3 rounded-xl border border-slate-200/70 flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-slate-800">{idx + 1}. {crit.label}</p>
+                        <p className="text-[10px] text-slate-400">{crit.desc}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={(evalForm as any)[crit.key]}
+                          onChange={(e) => setEvalForm({ ...evalForm, [crit.key]: Number(e.target.value) })}
+                          className="w-20 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-black text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="w-8 text-center text-xs font-extrabold text-blue-700">
+                          {getLetterGrade(Number((evalForm as any)[crit.key]))}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -1700,12 +1806,12 @@ export default function AdminDashboard() {
               <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-extrabold text-emerald-900">Nilai Rata-Rata Otomatis</p>
-                  <p className="text-[10px] text-emerald-700">Dihitung otomatis dari akumulasi 5 pilar bimbingan</p>
+                  <p className="text-[10px] text-emerald-700">Dihitung otomatis dari akumulasi 13 aspek standar rapor MDU</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-black text-emerald-950">{calculateAverage(evalForm)}</span>
+                  <span className="text-2xl font-black text-emerald-950">{calculateAverage13(evalForm)}</span>
                   <span className="block text-[11px] font-black text-emerald-700 uppercase tracking-wide">
-                    {getPredicateLabel(calculateAverage(evalForm))}
+                    Predikat: {getLetterGrade(parseFloat(calculateAverage13(evalForm)))}
                   </span>
                 </div>
               </div>
@@ -1746,10 +1852,10 @@ export default function AdminDashboard() {
       {/* ======================================================== */}
       {/* TEMPLATE RENDER DOM SERTIFIKAT MENTOR (RESOLUSI TINGGI)  */}
       {/* ======================================================== */}
-      <div style={{ position: 'absolute', top: '-10000px', left: '-10000px', zIndex: -100 }}>
+      <div style={{ position: 'absolute', top: '-10000px', left: '-10000px', opacity: 0, pointerEvents: 'none' }}>
         {certDataToPrint && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-            {/* HALAMAN 1: PIAGAM APRESIASI MENTOR PEMBIMBING */}
+            {/* HALAMAN 1: SERTIFIKAT DEPAN (LANDSCAPE PERSIS OJT) */}
             <div
               id="mentor-cert-page-1"
               style={{
@@ -1762,101 +1868,99 @@ export default function AdminDashboard() {
                 justifyContent: 'flex-start',
                 alignItems: 'center',
                 boxSizing: 'border-box',
-                padding: '145px 80px 40px 80px',
+                padding: '150px 80px 40px 80px',
                 fontFamily: 'sans-serif',
                 color: '#111827',
                 textAlign: 'center'
               }}
             >
-              {/* Background Blanco template */}
-              <img
-                src="/template-portrait-front.png"
-                alt="Blanco Front"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  zIndex: 0
-                }}
-              />
+              {/* Nomor Sertifikat */}
+              <div style={{ marginBottom: '5px' }}>
+                <p style={{ fontSize: '1.35rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 700, textDecoration: 'underline' }}>
+                  No : {certDataToPrint.grades?.no_sertifikat || '001/MDU-MENTOR/XI/2026'}
+                </p>
+              </div>
 
-              <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
-                {/* Nomor Sertifikat */}
-                <div style={{ marginBottom: '6px' }}>
-                  <p style={{ fontSize: '1.35rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 700, textDecoration: 'underline' }}>
-                    No : {certDataToPrint.grades?.no_sertifikat || '001/MDU-MENTOR/XI/2026'}
-                  </p>
-                </div>
+              {/* Diberikan kepada */}
+              <div style={{ marginBottom: '6px' }}>
+                <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                  Diberikan kepada:
+                </p>
+              </div>
 
-                {/* Diberikan kepada */}
-                <div style={{ marginBottom: '6px' }}>
-                  <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
-                    Diberikan kepada:
-                  </p>
-                </div>
+              {/* Nama Mentor */}
+              <div style={{ marginBottom: '12px' }}>
+                <h2 style={{ fontSize: '2.8rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#0F3357', margin: 0, fontWeight: 700, letterSpacing: '0.02em' }}>
+                  {certDataToPrint.mentor?.name || 'Nama Mentor'}
+                </h2>
+              </div>
 
-                {/* Nama Mentor */}
-                <div style={{ marginBottom: '10px' }}>
-                  <h2 style={{ fontSize: '2.8rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#0F3357', margin: 0, fontWeight: 700, letterSpacing: '0.02em' }}>
-                    {certDataToPrint.mentor?.name || 'Nama Mentor'}
-                  </h2>
-                </div>
+              {/* sebagai */}
+              <div style={{ marginBottom: '4px' }}>
+                <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                  sebagai
+                </p>
+              </div>
 
-                {/* sebagai */}
-                <div style={{ marginBottom: '4px' }}>
-                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
-                    sebagai
-                  </p>
-                </div>
+              {/* Peran / Status */}
+              <div style={{ marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '1.55rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 800, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
+                  {certDataToPrint.grades?.sebagai || certDataToPrint.mentor?.status || 'Mentor'}
+                </h3>
+              </div>
 
-                {/* Peran: Mentor Pembimbing */}
-                <div style={{ marginBottom: '10px' }}>
-                  <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 800, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
-                    Mentor Pembimbing Praktik Kerja Lapangan
-                  </h3>
-                </div>
+              {/* Pada Divisi */}
+              <div style={{ marginBottom: '4px' }}>
+                <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
+                  Pada Divisi
+                </p>
+              </div>
 
-                {/* Pada Divisi */}
-                <div style={{ marginBottom: '4px' }}>
-                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#374151', margin: 0 }}>
-                    Pada Divisi
-                  </p>
-                </div>
+              {/* Nama Divisi */}
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 900, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
+                  {certDataToPrint.mentor?.divisi || 'Multimedia'}
+                </h3>
+              </div>
 
-                {/* Nama Divisi */}
-                <div style={{ marginBottom: '14px' }}>
-                  <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 900, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
-                    {certDataToPrint.mentor?.divisi || 'Multimedia'}
-                  </h3>
-                </div>
+              {/* Keterangan Pelaksanaan */}
+              <div style={{ marginBottom: '4px' }}>
+                <p style={{ fontSize: '1.2rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
+                  Telah melaksanakan praktik kerja lapangan pada Mandiri Digital Universe
+                </p>
+              </div>
 
-                {/* Keterangan Pengabdian */}
-                <div style={{ marginBottom: '6px' }}>
-                  <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
-                    Telah mendedikasikan keahlian dan membimbing peserta magang pada Mandiri Digital Universe
-                  </p>
-                </div>
+              {/* Periode Tanggal */}
+              <div style={{ marginBottom: '16px' }}>
+                <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
+                  Terhitung mulai tanggal {certDataToPrint.grades?.start_period || certDataToPrint.mentor?.start_period || '-'} sampai dengan {certDataToPrint.grades?.end_period || certDataToPrint.mentor?.end_period || '-'}
+                </p>
+              </div>
 
-                {/* Periode Bimbingan */}
-                <div style={{ marginBottom: '16px' }}>
-                  <p style={{ fontSize: '1.1rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
-                    Terhitung mulai tanggal {certDataToPrint.grades?.start_period || certDataToPrint.mentor?.start_period || '-'} sampai dengan {certDataToPrint.grades?.end_period || certDataToPrint.mentor?.end_period || '-'}
-                  </p>
+              {/* Pengesahan CMO (Jakarta) */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 2px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 700, color: '#0F3357' }}>
+                  Jakarta, {certDataToPrint.grades?.created_at ? new Date(certDataToPrint.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+                <p style={{ margin: '0 0 3px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 400, color: '#111827' }}>
+                  Chief Marketing Officer
+                </p>
+                <div style={{ position: 'relative', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '2px 0' }}>
+                  <img
+                    src="/stamp-signature-cmo.png"
+                    alt="Stempel & Tanda Tangan Resmi MDU"
+                    style={{ height: '70px', width: 'auto', objectFit: 'contain' }}
+                    crossOrigin="anonymous"
+                  />
                 </div>
-
-                {/* Predikat Kelulusan Apresiasi */}
-                <div style={{ marginBottom: '10px' }}>
-                  <p style={{ fontSize: '1.25rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#0F3357', fontWeight: 800, margin: 0 }}>
-                    Dengan Predikat: <span style={{ textDecoration: 'underline' }}>{certDataToPrint.grades?.predikat || 'Sangat Memuaskan'}</span>
-                  </p>
-                </div>
+                <div style={{ width: '160px', height: '2px', background: 'linear-gradient(90deg, #b8860b, #e2b755, #b8860b)', margin: '4px 0 5px 0', borderRadius: '1px' }}></div>
+                <p style={{ margin: 0, fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 600, color: '#111827' }}>
+                  Sofian Wira Hadi, M.Kom.
+                </p>
               </div>
             </div>
 
-            {/* HALAMAN 2: TRANSKRIP EVALUASI KINERJA PEMBIMBINGAN */}
+            {/* HALAMAN 2: LEMBAR PENILAIAN (PERSIS OJT DENGAN 13 ASPEK) */}
             <div
               id="mentor-cert-page-2"
               style={{
@@ -1864,164 +1968,123 @@ export default function AdminDashboard() {
                 height: '1123px',
                 backgroundColor: '#ffffff',
                 position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
                 boxSizing: 'border-box',
-                padding: '60px 50px',
-                fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif",
-                color: '#111827'
+                fontFamily: 'sans-serif',
+                color: '#000000'
               }}
             >
-              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F3357', margin: 0 }}>
-                  LEMBAR EVALUASI KINERJA MENTOR PEMBIMBING
+              <div style={{ position: 'relative', padding: '45px 85px 25px 85px', flex: 1, display: 'flex', flexDirection: 'column', color: '#000000' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F3357', textTransform: 'uppercase', marginBottom: '0.85rem', textAlign: 'center', letterSpacing: '0.05em' }}>
+                  LEMBAR PENILAIAN MENTOR
                 </h2>
-                <p style={{ fontSize: '0.9rem', color: '#6B7280', margin: '4px 0 0 0' }}>
-                  PT MANDIRI DIGITAL UNIVERSE (MDU)
-                </p>
-              </div>
-
-              {/* Identitas Mentor */}
-              <div style={{ marginBottom: '20px', fontSize: '0.85rem', lineHeight: '1.6' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', marginBottom: '0.85rem', fontSize: '0.74rem', lineHeight: '1.2' }}>
                   <tbody>
-                    <tr>
-                      <td style={{ width: '160px', fontWeight: 700 }}>Nama Mentor</td>
-                      <td style={{ width: '10px' }}>:</td>
-                      <td style={{ fontWeight: 800, color: '#0F3357' }}>{certDataToPrint.mentor?.name}</td>
+                    {[
+                      ['Nama', certDataToPrint.mentor?.name || '-'],
+                      ['Sebagai', certDataToPrint.grades?.sebagai || certDataToPrint.mentor?.status || 'Mentor'],
+                      ['Instansi / Cabang', certDataToPrint.mentor?.asal_kantor || 'MDU Central'],
+                      ['Divisi', certDataToPrint.mentor?.divisi || '-'],
+                      ['Tanggal', `${certDataToPrint.grades?.start_period || certDataToPrint.mentor?.start_period || '-'} s/d ${certDataToPrint.grades?.end_period || certDataToPrint.mentor?.end_period || '-'}`],
+                      ['No. Sertifikat', certDataToPrint.grades?.no_sertifikat || '-']
+                    ].map((row, i) => (
+                      <tr key={i}>
+                        <td style={{ border: '1px solid #0F3357', padding: '4px 10px 10px 10px', fontWeight: 700, width: '35%', backgroundColor: '#f8fafc', verticalAlign: 'middle', lineHeight: '1.2' }}>{row[0]}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '4px 10px 10px 10px', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{row[1]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #0F3357', fontSize: '0.7rem', lineHeight: '1.2' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#0F3357', color: '#FCE91A' }}>
+                      <th style={{ border: '1px solid #0F3357', padding: '6px 4px 10px 4px', textAlign: 'center', width: '45px', verticalAlign: 'middle', lineHeight: '1.2' }}>No</th>
+                      <th style={{ border: '1px solid #0F3357', padding: '6px 10px 10px 10px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.2' }}>Aspek Penilaian</th>
+                      <th style={{ border: '1px solid #0F3357', padding: '6px 4px 10px 4px', textAlign: 'center', width: '75px', verticalAlign: 'middle', lineHeight: '1.2' }}>Nilai</th>
+                      <th style={{ border: '1px solid #0F3357', padding: '6px 4px 10px 4px', textAlign: 'center', width: '75px', verticalAlign: 'middle', lineHeight: '1.2' }}>Predikat</th>
                     </tr>
-                    <tr>
-                      <td style={{ fontWeight: 700 }}>NIP / ID</td>
-                      <td>:</td>
-                      <td>{certDataToPrint.mentor?.nip || certDataToPrint.mentor?.id?.slice(0, 8)}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: 700 }}>Divisi & Penempatan</td>
-                      <td>:</td>
-                      <td>{certDataToPrint.mentor?.divisi} - {certDataToPrint.mentor?.asal_kantor}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: 700 }}>No. Sertifikat</td>
-                      <td>:</td>
-                      <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{certDataToPrint.grades?.no_sertifikat}</td>
+                  </thead>
+                  <tbody>
+                    {[
+                      { q: 'q1_waktu', label: 'Disiplin Waktu & Kehadiran' },
+                      { q: 'q2_sikap', label: 'Etika & Sikap Perilaku' },
+                      { q: 'q3_tanggung_jawab', label: 'Tanggung Jawab Penugasan' },
+                      { q: 'q4_kehadiran', label: 'Konsistensi Presensi' },
+                      { q: 'q5_kemampuan', label: 'Kemampuan Kerja & Problem Solving' },
+                      { q: 'q6_keterampilan', label: 'Keterampilan Teknis & Kreativitas' },
+                      { q: 'q7_kualitas', label: 'Kualitas Hasil Pekerjaan' },
+                      { q: 'q8_komunikasi', label: 'Komunikasi & Koordinasi' },
+                      { q: 'q9_kerjasama', label: 'Kerjasama Tim' },
+                      { q: 'q10_inisiatif', label: 'Inisiatif & Keaktifan' },
+                      { q: 'q11_percaya_diri', label: 'Percaya Diri & Kemandirian' },
+                      { q: 'q12_patuh_aturan', label: 'Kepatuhan Tata Tertib MDU' },
+                      { q: 'q13_penampilan', label: 'Kerapian & Penampilan' }
+                    ].map((item, i) => (
+                      <tr key={item.q} style={{ backgroundColor: i % 2 === 0 ? '#f0f5fa' : 'white' }}>
+                        <td style={{ border: '1px solid #0F3357', padding: '3px 4px 20px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 600, lineHeight: '1.2' }}>{i + 1}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '3px 10px 20px 10px', textAlign: 'left', verticalAlign: 'middle', lineHeight: '1.2' }}>{item.label}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '3px 4px 20px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{certDataToPrint.grades?.[item.q] || 90}</td>
+                        <td style={{ border: '1px solid #0F3357', padding: '3px 4px 20px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.2' }}>{getLetterGrade(Number(certDataToPrint.grades?.[item.q] || 90))}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ backgroundColor: '#FCE91A', color: '#0F3357', fontWeight: 800 }}>
+                      <td colSpan={2} style={{ border: '1px solid #0F3357', padding: '15px 10px 20px 10px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.5' }}>RATA-RATA AKHIR</td>
+                      <td style={{ border: '1px solid #0F3357', padding: '15px 4px 20px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.5' }}>{calculateAverage13(certDataToPrint.grades)}</td>
+                      <td style={{ border: '1px solid #0F3357', padding: '15px 4px 20px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.5' }}>{getLetterGrade(Number(calculateAverage13(certDataToPrint.grades)))}</td>
                     </tr>
                   </tbody>
                 </table>
-              </div>
 
-              {/* Tabel Nilai 5 Pilar */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px', fontSize: '0.85rem' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#0F3357', color: '#ffffff', textAlign: 'center' }}>
-                    <th style={{ padding: '10px', border: '1px solid #0F3357', width: '40px' }}>NO</th>
-                    <th style={{ padding: '10px', border: '1px solid #0F3357', textAlign: 'left' }}>ASPEK KOMPETENSI PEMBIMBINGAN</th>
-                    <th style={{ padding: '10px', border: '1px solid #0F3357', width: '100px' }}>NILAI (0-100)</th>
-                    <th style={{ padding: '10px', border: '1px solid #0F3357', width: '120px' }}>KUALIFIKASI</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>1</td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
-                      <b>Kepemimpinan & Pembimbingan Mentee</b><br/>
-                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Kemampuan mengarahkan, membina, dan memotivasi peserta OJT</span>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
-                      {certDataToPrint.grades?.nilai_kepemimpinan || 90}
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-                      {getPredicateLabel(Number(certDataToPrint.grades?.nilai_kepemimpinan || 90))}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>2</td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
-                      <b>Tanggung Jawab & Kedisiplinan</b><br/>
-                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Konsistensi kehadiran bimbingan, review tugas, dan dedikasi</span>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
-                      {certDataToPrint.grades?.nilai_kedisiplinan || 90}
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-                      {getPredicateLabel(Number(certDataToPrint.grades?.nilai_kedisiplinan || 90))}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>3</td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
-                      <b>Komunikasi & Kerjasama Tim</b><br/>
-                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Koordinasi antar divisi, bimbingan berkala, dan evaluasi berkala</span>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
-                      {certDataToPrint.grades?.nilai_komunikasi || 90}
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-                      {getPredicateLabel(Number(certDataToPrint.grades?.nilai_komunikasi || 90))}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>4</td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
-                      <b>Penguasaan Teknis & Manajerial</b><br/>
-                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Penguasaan kurikulum industri, standar SOP, dan transfer ilmu</span>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
-                      {certDataToPrint.grades?.nilai_teknis || 90}
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-                      {getPredicateLabel(Number(certDataToPrint.grades?.nilai_teknis || 90))}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>5</td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB' }}>
-                      <b>Efektivitas Pembinaan & Capaian Tim</b><br/>
-                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Kualitas karya peserta dan pencapaian target penugasan magang</span>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center', fontWeight: 700 }}>
-                      {certDataToPrint.grades?.nilai_efektivitas || 90}
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-                      {getPredicateLabel(Number(certDataToPrint.grades?.nilai_efektivitas || 90))}
-                    </td>
-                  </tr>
-                  {/* Rata-rata */}
-                  <tr style={{ backgroundColor: '#F9FAFB', fontWeight: 800 }}>
-                    <td colSpan={2} style={{ padding: '10px', border: '1px solid #D1D5DB', textAlign: 'right' }}>
-                      NILAI RATA-RATA TOTAL
-                    </td>
-                    <td style={{ padding: '10px', border: '1px solid #D1D5DB', textAlign: 'center', fontSize: '1rem', color: '#0F3357' }}>
-                      {Math.round(
-                        (Number(certDataToPrint.grades?.nilai_kepemimpinan || 0) +
-                          Number(certDataToPrint.grades?.nilai_kedisiplinan || 0) +
-                          Number(certDataToPrint.grades?.nilai_komunikasi || 0) +
-                          Number(certDataToPrint.grades?.nilai_teknis || 0) +
-                          Number(certDataToPrint.grades?.nilai_efektivitas || 0)) / 5
-                      )}
-                    </td>
-                    <td style={{ padding: '10px', border: '1px solid #D1D5DB', textAlign: 'center', color: '#0F3357' }}>
-                      {certDataToPrint.grades?.predikat || 'Sangat Memuaskan'}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Catatan Apresiasi */}
-              {certDataToPrint.grades?.catatan && (
-                <div style={{ padding: '12px 16px', backgroundColor: '#F3F4F6', borderRadius: '8px', marginBottom: '30px', fontSize: '0.8rem', borderLeft: '4px solid #0F3357' }}>
-                  <p style={{ margin: 0, fontWeight: 700, color: '#374151' }}>Catatan Apresiasi Manajemen MDU:</p>
-                  <p style={{ margin: '4px 0 0 0', fontStyle: 'italic', color: '#4B5563' }}>"{certDataToPrint.grades.catatan}"</p>
+                {/* Ketentuan Penilaian */}
+                <div style={{ marginTop: '12px', fontSize: '0.66rem', color: '#334155', lineHeight: '1.45', borderLeft: '3px solid #0F3357', paddingLeft: '8px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, color: '#0F3357' }}>Ketentuan penilaian:</p>
+                  <p style={{ margin: '2px 0 0 0' }}>
+                    96 s/d 100 : Nilai A+, 91 s/d 95 : Nilai A, 86 s/d 90 : Nilai A-, 81 s/d 85 : Nilai B+, 76 s/d 80 : Nilai B, 71 s/d 75 : Nilai B-, 66 s/d 70 : Nilai C
+                  </p>
                 </div>
-              )}
 
-              {/* Bagian Tanda Tangan */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-                <div style={{ textAlign: 'center', width: '240px' }}>
-                  <p style={{ margin: 0, fontSize: '0.85rem' }}>Jakarta, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p style={{ margin: '2px 0 0 0', fontWeight: 700, fontSize: '0.85rem' }}>Manajemen Pusat MDU</p>
-                  <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src="/stamp-signature-cmo.png" alt="Stempel MDU" style={{ height: '70px', objectFit: 'contain' }} />
+                {/* Tanda Tangan & Stempel Resmi MDU */}
+                <div style={{ marginTop: '2px', display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                  <div style={{ textAlign: 'center', width: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <p style={{ margin: '0 0 3px 0', fontSize: '0.78rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#0F3357', fontWeight: 700 }}>
+                      Jakarta, {certDataToPrint.grades?.created_at ? new Date(certDataToPrint.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                    <img
+                      src="/signature-mdu.png"
+                      alt="Tanda Tangan & Stempel MDU"
+                      style={{ width: '155px', height: 'auto', display: 'block' }}
+                      crossOrigin="anonymous"
+                    />
                   </div>
-                  <p style={{ margin: 0, fontWeight: 800, textDecoration: 'underline', fontSize: '0.9rem' }}>Chief Management Officer</p>
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B7280' }}>PT Mandiri Digital Universe</p>
+                </div>
+
+                {/* Media Partner MDU */}
+                <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1.5px solid #0F3357', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <p style={{ margin: 0, fontSize: '0.68rem', fontWeight: 800, color: '#0F3357', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Media Partner:
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+                    <img
+                      src="/partners/milenianews.jpg"
+                      alt="Milenianews.com"
+                      style={{ height: '26px', width: 'auto', objectFit: 'contain' }}
+                      crossOrigin="anonymous"
+                    />
+                    <img
+                      src="/partners/sobatsekolah.png"
+                      alt="Sobat Sekolah"
+                      style={{ height: '30px', width: 'auto', objectFit: 'contain' }}
+                      crossOrigin="anonymous"
+                    />
+                    <img
+                      src="/partners/nusamandirinews.png"
+                      alt="Nusa Mandiri News"
+                      style={{ height: '24px', width: 'auto', objectFit: 'contain' }}
+                      crossOrigin="anonymous"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

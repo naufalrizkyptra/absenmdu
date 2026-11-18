@@ -149,6 +149,16 @@ export async function deleteOJTAccount(userId: string) {
 // 5. FUNGSI INPUT & UPDATE NILAI OJT
 export async function submitOJTGrades(gradeData: any) {
   try {
+    const { sebagai, ...dbGradeData } = gradeData
+
+    // Simpan pilihan peran 'sebagai' di kolom status tabel users jika disertakan
+    if (sebagai && gradeData.user_id) {
+      await supabaseAdmin
+        .from('users')
+        .update({ status: sebagai })
+        .eq('id', gradeData.user_id)
+    }
+
     // Cek dulu apakah anak OJT ini udah pernah dinilai sebelumnya
     const { data: existing } = await supabaseAdmin
       .from('ojt_grades')
@@ -160,7 +170,7 @@ export async function submitOJTGrades(gradeData: any) {
       // Kalau udah pernah dinilai, kita UPDATE datanya (biar nggak dobel)
       const { error } = await supabaseAdmin
         .from('ojt_grades')
-        .update(gradeData)
+        .update(dbGradeData)
         .eq('id', existing.id)
 
       if (error) throw error
@@ -168,7 +178,7 @@ export async function submitOJTGrades(gradeData: any) {
       // Kalau belum pernah dinilai, kita INSERT data baru
       const { error } = await supabaseAdmin
         .from('ojt_grades')
-        .insert([gradeData])
+        .insert([dbGradeData])
 
       if (error) throw error
     }

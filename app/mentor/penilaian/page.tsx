@@ -44,7 +44,8 @@ export default function PenilaianPage() {
     q11: 0, q12: 0, q13: 0,
     no_sertifikat: '',
     kelas: '',
-    jurusan: ''
+    jurusan: '',
+    sebagai: 'On Job Training (OJT)'
   })
 
   const fetchData = async () => {
@@ -84,8 +85,22 @@ export default function PenilaianPage() {
     fetchData()
   }, [router])
 
-  const calculateAverage = (g = grades) => {
-    const total = g.q1 + g.q2 + g.q3 + g.q4 + g.q5 + g.q6 + g.q7 + g.q8 + g.q9 + g.q10 + g.q11 + g.q12 + g.q13
+  const calculateAverage = (g: any = grades) => {
+    if (!g) return '0.0'
+    const q1 = Number(g.q1 ?? g.q1_waktu ?? 0)
+    const q2 = Number(g.q2 ?? g.q2_sikap ?? 0)
+    const q3 = Number(g.q3 ?? g.q3_tanggung_jawab ?? 0)
+    const q4 = Number(g.q4 ?? g.q4_kehadiran ?? 0)
+    const q5 = Number(g.q5 ?? g.q5_kemampuan ?? 0)
+    const q6 = Number(g.q6 ?? g.q6_keterampilan ?? 0)
+    const q7 = Number(g.q7 ?? g.q7_kualitas ?? 0)
+    const q8 = Number(g.q8 ?? g.q8_komunikasi ?? 0)
+    const q9 = Number(g.q9 ?? g.q9_kerjasama ?? 0)
+    const q10 = Number(g.q10 ?? g.q10_inisiatif ?? 0)
+    const q11 = Number(g.q11 ?? g.q11_percaya_diri ?? 0)
+    const q12 = Number(g.q12 ?? g.q12_patuh_aturan ?? 0)
+    const q13 = Number(g.q13 ?? g.q13_penampilan ?? 0)
+    const total = q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9 + q10 + q11 + q12 + q13
     return (total / 13).toFixed(1)
   }
 
@@ -175,6 +190,7 @@ export default function PenilaianPage() {
     const lastCert = globalLatestCert || getLatestCertificateFromGrades()
     const autoNext = globalNextCert || (lastCert ? getNextCertificateNumber(lastCert) : '')
     const lastMeta = getLastKelasAndJurusan()
+    const initialRole = student.status || (student.role === 'mentor' ? 'Mentor' : 'On Job Training (OJT)')
 
     if (existing) {
       setGrades({
@@ -184,7 +200,8 @@ export default function PenilaianPage() {
         q11: existing.q11_percaya_diri || 0, q12: existing.q12_patuh_aturan || 0, q13: existing.q13_penampilan || 0,
         no_sertifikat: existing.no_sertifikat || autoNext,
         kelas: existing.kelas || lastMeta.kelas || '',
-        jurusan: existing.jurusan || lastMeta.jurusan || student.jurusan || student.divisi || ''
+        jurusan: existing.jurusan || lastMeta.jurusan || student.jurusan || student.divisi || '',
+        sebagai: initialRole
       })
     } else {
       // SINKRONKAN otomatis nomor sertifikat berikutnya (+1), kelas, dan jurusan dari pengisian seluruh mentor!
@@ -195,7 +212,8 @@ export default function PenilaianPage() {
         q11: 0, q12: 0, q13: 0,
         no_sertifikat: autoNext,
         kelas: lastMeta.kelas || '',
-        jurusan: lastMeta.jurusan || student.jurusan || student.divisi || ''
+        jurusan: lastMeta.jurusan || student.jurusan || student.divisi || '',
+        sebagai: initialRole
       })
     }
     setActiveView('form')
@@ -288,7 +306,8 @@ export default function PenilaianPage() {
       q11_percaya_diri: grades.q11, q12_patuh_aturan: grades.q12, q13_penampilan: grades.q13,
       no_sertifikat: (grades as any).no_sertifikat,
       kelas: (grades as any).kelas,
-      jurusan: (grades as any).jurusan
+      jurusan: (grades as any).jurusan,
+      sebagai: (grades as any).sebagai || 'On Job Training (OJT)'
     }
 
     const result = await submitOJTGrades(payload)
@@ -367,7 +386,8 @@ export default function PenilaianPage() {
       q11_percaya_diri: grades.q11, q12_patuh_aturan: grades.q12, q13_penampilan: grades.q13,
       no_sertifikat: (grades as any).no_sertifikat,
       kelas: (grades as any).kelas,
-      jurusan: (grades as any).jurusan
+      jurusan: (grades as any).jurusan,
+      sebagai: (grades as any).sebagai || 'On Job Training (OJT)'
     }
 
     const result = await submitOJTGrades(payload)
@@ -404,9 +424,11 @@ export default function PenilaianPage() {
       if (gradesErr && gradesErr.code !== 'PGRST116') throw new Error("Gagal mengambil data nilai rapor")
 
       // 2. Suntik data ke state (Memicu React merender template rahasia di bawah)
+      const certRole = latestStudent?.status || (latestStudent?.role === 'mentor' ? 'Mentor' : 'On Job Training (OJT)')
       setCertData({
         student: latestStudent,
-        grades: latestGrades || {}
+        grades: latestGrades || {},
+        sebagai: certRole
       })
 
       // 3. Beri jeda 800ms agar DOM selesai menggambar desain HTML-nya
@@ -518,7 +540,7 @@ export default function PenilaianPage() {
                   className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 text-left"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                  <span className="font-semibold text-sm">Pantuan Tim</span>
+                  <span className="font-semibold text-sm">Pantauan Tim</span>
                 </button>
                 <button
                   onClick={() => { setMobileMenuOpen(false); router.push('/mentor/data-ojt'); }}
@@ -591,7 +613,7 @@ export default function PenilaianPage() {
           <div className="px-4 flex-1 mt-4 space-y-2">
             <button onClick={() => router.push('/mentor')} className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              <span className="font-semibold text-sm">Pantuan Tim</span>
+              <span className="font-semibold text-sm">Pantauan Tim</span>
             </button>
             <button onClick={() => router.push('/mentor/data-ojt')} className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -609,6 +631,26 @@ export default function PenilaianPage() {
             <button className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <span className="font-semibold text-sm">Penilaian Evaluasi</span>
+            </button>
+          </div>
+
+          <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-3 px-2 mb-4">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full bg-slate-100 border-2 border-white object-cover shadow-inner" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-[#1e1b4b] flex items-center justify-center text-sm font-bold text-white shadow-md border-2 border-white">
+                  {profile?.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="overflow-hidden">
+                <p className="text-sm font-bold text-slate-800 truncate">{profile?.name}</p>
+                <p className="text-xs text-indigo-600 font-medium">Mentor Eksekutif</p>
+              </div>
+            </div>
+            <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 font-bold hover:bg-red-50 rounded-xl transition-all">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Keluar Sesi
             </button>
           </div>
         </aside>
@@ -986,7 +1028,32 @@ export default function PenilaianPage() {
                           </div>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl flex flex-col hover:border-indigo-100 transition-colors">
+                          <span className="text-xs font-bold text-slate-500 mb-2.5 uppercase tracking-wide">Sebagai (Peran Sertifikat)</span>
+                          <div className="grid grid-cols-2 gap-2 mt-auto">
+                            <button
+                              type="button"
+                              onClick={() => setGrades({ ...grades, sebagai: 'On Job Training (OJT)' })}
+                              className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${(grades as any).sebagai !== 'Mentor'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                              OJT
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setGrades({ ...grades, sebagai: 'Mentor' })}
+                              className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${(grades as any).sebagai === 'Mentor'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                              Mentor
+                            </button>
+                          </div>
+                        </div>
                         <div className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl flex flex-col hover:border-indigo-100 transition-colors">
                           <span className="text-xs font-bold text-slate-500 mb-2.5 uppercase tracking-wide">Kelas <span className="text-indigo-400 font-medium normal-case ml-1">(Gunakan Romawi: X, XI, XII)</span></span>
                           <input type="text" value={(grades as any).kelas || ''} onChange={(e) => setGrades({ ...grades, kelas: e.target.value })} className="w-full px-4 py-2.5 text-base font-bold text-indigo-950 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm" placeholder="Contoh: XII" />
@@ -1122,17 +1189,17 @@ export default function PenilaianPage() {
                   position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'center',
+                  justifyContent: 'flex-start',
                   alignItems: 'center',
                   boxSizing: 'border-box',
-                  padding: '60px 80px',
+                  padding: '150px 80px 40px 80px',
                   fontFamily: 'sans-serif',
                   color: '#111827',
                   textAlign: 'center'
                 }}
               >
-                {/* Nomor Sertifikat */}
-                <div style={{ marginBottom: '22px' }}>
+                {/* Nomor Sertifikat (Turun ke bawah agar pas di bawah blanco 'SERTIFIKAT', mepet ke 'Diberikan kepada:') */}
+                <div style={{ marginBottom: '5px' }}>
                   <p style={{ fontSize: '1.35rem', fontFamily: 'sans-serif', margin: 0, color: '#111827', fontWeight: 700, textDecoration: 'underline' }}>
                     No : {certData.grades?.no_sertifikat || '328/MDU/IX/2026'}
                   </p>
@@ -1146,7 +1213,7 @@ export default function PenilaianPage() {
                 </div>
 
                 {/* Nama Peserta */}
-                <div style={{ marginBottom: '14px' }}>
+                <div style={{ marginBottom: '12px' }}>
                   <h2 style={{ fontSize: '2.8rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#0F3357', margin: 0, fontWeight: 700, letterSpacing: '0.02em' }}>
                     {certData.student?.name || 'Nama Peserta'}
                   </h2>
@@ -1159,10 +1226,10 @@ export default function PenilaianPage() {
                   </p>
                 </div>
 
-                {/* On Job Training (OJT) */}
+                {/* On Job Training (OJT) / Mentor */}
                 <div style={{ marginBottom: '12px' }}>
                   <h3 style={{ fontSize: '1.55rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 800, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
-                    On Job Training (OJT)
+                    {certData.sebagai || certData.student?.status || (certData.student?.role === 'mentor' ? 'Mentor' : 'On Job Training (OJT)')}
                   </h3>
                 </div>
 
@@ -1174,7 +1241,7 @@ export default function PenilaianPage() {
                 </div>
 
                 {/* Nama Divisi */}
-                <div style={{ marginBottom: '18px' }}>
+                <div style={{ marginBottom: '16px' }}>
                   <h3 style={{ fontSize: '1.65rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 900, color: '#0F3357', margin: 0, letterSpacing: '0.03em' }}>
                     {certData.student?.divisi || 'Multimedia'}
                   </h3>
@@ -1188,17 +1255,16 @@ export default function PenilaianPage() {
                 </div>
 
                 {/* Periode Tanggal */}
-                <div style={{ marginBottom: '18px' }}>
+                <div style={{ marginBottom: '16px' }}>
                   <p style={{ fontSize: '1.15rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#111827', margin: 0 }}>
                     Terhitung mulai tanggal {certData.student?.start_period || '-'} sampai dengan {certData.student?.end_period || '-'}
                   </p>
                 </div>
 
-                {/* Pengesahan CMO (Format Desain Font Resmi Sesuai Gambar) */}
+                {/* Pengesahan CMO (Jakarta) */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                   <p style={{ margin: '0 0 2px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 700, color: '#0F3357' }}>
-                    {certData.student?.asal_kantor ? `${certData.student.asal_kantor}, ` : 'Jatiwaringin, '}
-                    {certData.grades?.created_at ? new Date(certData.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    Jakarta, {certData.grades?.created_at ? new Date(certData.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                   <p style={{ margin: '0 0 3px 0', fontSize: '1.05rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", fontWeight: 400, color: '#111827' }}>
                     Chief Marketing Officer
@@ -1284,8 +1350,7 @@ export default function PenilaianPage() {
                   <div style={{ marginTop: '2px', display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
                     <div style={{ textAlign: 'center', width: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <p style={{ margin: '0 0 3px 0', fontSize: '0.78rem', fontFamily: "'Century Gothic', 'Montserrat', 'Poppins', sans-serif", color: '#0F3357', fontWeight: 700 }}>
-                        {certData.student?.asal_kantor ? `${certData.student.asal_kantor}, ` : 'Jatiwaringin, '}
-                        {certData.grades?.created_at ? new Date(certData.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        Jakarta, {certData.grades?.created_at ? new Date(certData.grades.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                       <img
                         src="/signature-mdu.png"

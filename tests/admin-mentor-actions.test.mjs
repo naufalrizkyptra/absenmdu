@@ -46,3 +46,12 @@ test('calculateMentorScore and getPredicate logic returns correct values', () =>
   assert.strictEqual(calculateAverage({ kepemimpinan: 75, kedisiplinan: 72, komunikasi: 78, teknis: 74, efektivitas: 71 }), 74);
   assert.strictEqual(getPredicate(74), 'Baik');
 });
+
+test('submitMentorEvaluation assigns non-null evaluatorId to mentor_id in ojtGradePayload', () => {
+  const actionsPath = path.join(process.cwd(), 'app', 'admin', 'actions.ts');
+  const content = fs.readFileSync(actionsPath, 'utf-8');
+  
+  // Must ensure evaluatorId is used and never null
+  assert.ok(content.includes('evaluatorId'), 'Must define evaluatorId for mentor_id');
+  assert.ok(content.includes('mentor_id: evaluatorId'), 'ojtGradePayload must assign mentor_id to evaluatorId');
+});

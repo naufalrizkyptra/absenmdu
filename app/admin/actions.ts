@@ -262,9 +262,15 @@ export async function submitMentorEvaluation(gradeData: {
     const finalPredikat = gradeData.predikat || getLetterGrade(avgNum)
 
     // 1. Simpan ke ojt_grades (Relasional utama yang digunakan sertifikat)
+    const evaluatorId = (gradeData.admin_id && gradeData.admin_id.trim() !== '')
+      ? gradeData.admin_id.trim()
+      : gradeData.mentor_id
+
     const ojtGradePayload: any = {
       user_id: gradeData.mentor_id,
+      mentor_id: evaluatorId,
       no_sertifikat: gradeData.no_sertifikat ? gradeData.no_sertifikat.trim() : null,
+      kelas: gradeData.sebagai || 'Mentor',
       q1_waktu: q1,
       q2_sikap: q2,
       q3_tanggung_jawab: q3,
@@ -327,19 +333,21 @@ export async function submitMentorEvaluation(gradeData: {
         updated_at: new Date().toISOString()
       }
 
-      const { data: existingMentorGrade } = await supabaseAdmin
+      const { data: existingMentorGrade, error: checkErr } = await supabaseAdmin
         .from('mentor_grades')
         .select('id')
         .eq('mentor_id', gradeData.mentor_id)
         .maybeSingle()
 
-      if (existingMentorGrade) {
-        await supabaseAdmin.from('mentor_grades').update(mentorGradePayload).eq('id', existingMentorGrade.id)
-      } else {
-        await supabaseAdmin.from('mentor_grades').insert([mentorGradePayload])
+      if (!checkErr) {
+        if (existingMentorGrade) {
+          await supabaseAdmin.from('mentor_grades').update(mentorGradePayload).eq('id', existingMentorGrade.id)
+        } else {
+          await supabaseAdmin.from('mentor_grades').insert([mentorGradePayload])
+        }
       }
     } catch (ignore) {
-      // Abaikan jika tabel mentor_grades belum termigrasi
+      // Abaikan jika tabel mentor_grades belum termigrasi di database
     }
 
     return { success: true, message: 'Evaluasi & sertifikat mentor berhasil disimpan.' }
@@ -352,8 +360,14 @@ export async function submitMentorEvaluation(gradeData: {
 // 7. BATALKAN / HAPUS EVALUASI & SERTIFIKAT MENTOR
 export async function deleteMentorEvaluation(mentorId: string) {
   try {
-    await supabaseAdmin.from('ojt_grades').delete().eq('user_id', mentorId)
-    await supabaseAdmin.from('mentor_grades').delete().eq('mentor_id', mentorId)
+    const { error: ojtErr } = await supabaseAdmin.from('ojt_grades').delete().eq('user_id', mentorId)
+    if (ojtErr) throw ojtErr
+
+    try {
+      await supabaseAdmin.from('mentor_grades').delete().eq('mentor_id', mentorId)
+    } catch (ignore) {
+      // Abaikan jika tabel mentor_grades belum ada
+    }
 
     return { success: true, message: 'Evaluasi & sertifikat mentor berhasil dibatalkan.' }
   } catch (error: any) {

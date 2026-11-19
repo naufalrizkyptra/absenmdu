@@ -974,8 +974,12 @@ export default function AdminDashboard() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <span className="text-2xl">🏢</span>
-                    <h3 className="text-sm font-bold text-slate-800 mt-2">Cabang Jatiwaringin</h3>
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800 mt-3">Cabang Jatiwaringin</h3>
                     <p className="text-xs text-slate-400 mt-1">Kantor Operasional & Studio Produksi</p>
                     <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs font-bold">
                       <span className="text-slate-500">Mentor: {allMentors.filter(m => m.asal_kantor?.includes('Jatiwaringin')).length}</span>
@@ -983,8 +987,12 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <span className="text-2xl">🏛️</span>
-                    <h3 className="text-sm font-bold text-slate-800 mt-2">Cabang BSD</h3>
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800 mt-3">Cabang BSD</h3>
                     <p className="text-xs text-slate-400 mt-1">Sentra Teknologi & Desain</p>
                     <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs font-bold">
                       <span className="text-slate-500">Mentor: {allMentors.filter(m => m.asal_kantor?.includes('BSD')).length}</span>
@@ -992,8 +1000,12 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <span className="text-2xl">🎓</span>
-                    <h3 className="text-sm font-bold text-slate-800 mt-2">Kelulusan & Sertifikasi</h3>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5" />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800 mt-3">Kelulusan & Sertifikasi</h3>
                     <p className="text-xs text-slate-400 mt-1">Sertifikat Resmi Diterbitkan</p>
                     <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs font-bold">
                       <span className="text-amber-600">Sertif Mentor: {mentorGrades.filter(g => g.no_sertifikat).length}</span>
@@ -1245,12 +1257,18 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="p-3.5">
                                   {hasCert ? (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700">
-                                      🏆 {letterPred || grade.predikat || 'A'}
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-xs">
+                                      <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                      </svg>
+                                      <span>Predikat {letterPred || grade.predikat || 'A'}</span>
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700">
-                                      ⏳ Belum Dinilai
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 shadow-xs">
+                                      <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <span>Belum Dinilai</span>
                                     </span>
                                   )}
                                 </td>
@@ -1316,9 +1334,12 @@ export default function AdminDashboard() {
               </div>
               <button
                 onClick={() => setShowAddMentorModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100"
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                aria-label="Tutup"
               >
-                ✕
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
@@ -1376,7 +1397,7 @@ export default function AdminDashboard() {
                     {DIVISION_OPTIONS.map((div) => (
                       <option key={div} value={div}>{div}</option>
                     ))}
-                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                    <option value="__custom__">+ Lainnya (Ketik Manual)</option>
                   </select>
                   {(!DIVISION_OPTIONS.includes(newMentorForm.divisi) || newMentorForm.divisi === '') && (
                     <input
@@ -1404,7 +1425,7 @@ export default function AdminDashboard() {
                     {OFFICE_OPTIONS.map((off) => (
                       <option key={off} value={off}>{off}</option>
                     ))}
-                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                    <option value="__custom__">+ Lainnya (Ketik Manual)</option>
                   </select>
                   {(!OFFICE_OPTIONS.includes(newMentorForm.asal_kantor) || newMentorForm.asal_kantor === '') && (
                     <input
@@ -1484,9 +1505,12 @@ export default function AdminDashboard() {
               </div>
               <button
                 onClick={() => setShowEditMentorModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100"
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                aria-label="Tutup"
               >
-                ✕
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
@@ -1541,7 +1565,7 @@ export default function AdminDashboard() {
                     {DIVISION_OPTIONS.map((div) => (
                       <option key={div} value={div}>{div}</option>
                     ))}
-                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                    <option value="__custom__">+ Lainnya (Ketik Manual)</option>
                   </select>
                   {(!DIVISION_OPTIONS.includes(editingMentor.divisi) || editingMentor.divisi === '') && (
                     <input
@@ -1569,7 +1593,7 @@ export default function AdminDashboard() {
                     {OFFICE_OPTIONS.map((off) => (
                       <option key={off} value={off}>{off}</option>
                     ))}
-                    <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                    <option value="__custom__">+ Lainnya (Ketik Manual)</option>
                   </select>
                   {(!OFFICE_OPTIONS.includes(editingMentor.asal_kantor) || editingMentor.asal_kantor === '') && (
                     <input
@@ -1677,17 +1701,27 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div>
-                <h3 className="text-lg font-black text-slate-800">Evaluasi Kinerja & Sertifikat Mentor</h3>
-                <p className="text-xs text-slate-500">
-                  Penilaian 13 kriteria evaluasi bimbingan resmi untuk <b>{evaluatingMentor.name}</b>.
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100/80">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800">Evaluasi Kinerja & Sertifikat Mentor</h3>
+                  <p className="text-xs text-slate-500">
+                    Penilaian 13 kriteria evaluasi bimbingan resmi untuk <b>{evaluatingMentor.name}</b>.
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setShowEvalModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100"
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                aria-label="Tutup"
               >
-                ✕
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
@@ -1722,7 +1756,7 @@ export default function AdminDashboard() {
                       {ROLE_OPTIONS.map((r) => (
                         <option key={r} value={r}>{r}</option>
                       ))}
-                      <option value="__custom__">➕ Lainnya (Ketik Manual)</option>
+                      <option value="__custom__">+ Lainnya (Ketik Manual)</option>
                     </select>
                     {(!ROLE_OPTIONS.includes(evalForm.sebagai) || evalForm.sebagai === '') && (
                       <input
@@ -1804,9 +1838,16 @@ export default function AdminDashboard() {
 
               {/* RINGKASAN NILAI & PREDIKAT */}
               <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-extrabold text-emerald-900">Nilai Rata-Rata Otomatis</p>
-                  <p className="text-[10px] text-emerald-700">Dihitung otomatis dari akumulasi 13 aspek standar rapor MDU</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs font-extrabold text-emerald-900">Nilai Rata-Rata Otomatis</p>
+                    <p className="text-[10px] text-emerald-700">Dihitung otomatis dari akumulasi 13 aspek standar rapor MDU</p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-black text-emerald-950">{calculateAverage13(evalForm)}</span>

@@ -748,8 +748,10 @@ export default function MentorDashboard() {
             {myMentorCertificate?.no_sertifikat && (
               <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-amber-300/30">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl shrink-0 shadow-inner">
-                    🏆
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 shadow-inner">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -1552,9 +1554,9 @@ export default function MentorDashboard() {
                       onChange={(e) => setNewAnnounceCategory(e.target.value as any)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs"
                     >
-                      <option value="info">🔵 Info Umum</option>
-                      <option value="penting">🔴 Penting / Urgent</option>
-                      <option value="evaluasi">🟣 Evaluasi Proyek</option>
+                      <option value="info">Info Umum</option>
+                      <option value="penting">Penting / Urgent</option>
+                      <option value="evaluasi">Evaluasi Proyek</option>
                     </select>
                   </div>
                 </div>
@@ -1643,7 +1645,10 @@ export default function MentorDashboard() {
                                   : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                               }`}
                             >
-                              {item.is_active ? '● Aktif' : '○ Nonaktif'}
+                              <span className="inline-flex items-center gap-1">
+                                <span className={`w-1.5 h-1.5 rounded-full ${item.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                                <span>{item.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                              </span>
                             </button>
                             <button
                               type="button"
